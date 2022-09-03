@@ -1,3 +1,7 @@
+const std = @import("std");
+
+const Color = @import("color.zig").Color;
+
 // Square is coordinates of board square
 // starting from bottom-left (A1) as 0
 // and moving to the right (H1) and
@@ -26,6 +30,14 @@ pub const Square = packed struct {
 
     pub inline fn equals(self: Self, other: Self) bool {
         return self.index == other.index;
+    }
+
+    pub inline fn forward(self: Self, comptime color: Color, amount: u6) Self {
+        if (std.meta.eql(color, Color.White)) {
+            return .{ .index = self.index + amount * 8 };
+        } else {
+            unreachable;
+        }
     }
 
     pub inline fn moveRightUnchecked(self: *Self, amount: u6) void {

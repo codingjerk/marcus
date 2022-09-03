@@ -2,40 +2,44 @@ const std = @import("std");
 const assert = std.debug.assert;
 
 const Board = @import("board.zig").Board;
+const Color = @import("color.zig").Color;
 const Piece = @import("piece.zig").Piece;
 const Square = @import("square.zig").Square;
 const StaticBuffer = @import("buffer.zig").StaticBuffer;
 const Move = @import("move.zig").Move;
 
 pub const MoveGen = struct {
-    pub fn generate(
-        comptime Output: type,
+    const Self = @This();
+
+    fn generatePawn(
+        comptime Buffer: type,
         board: *const Board,
-        output: *Output,
+        output: *Buffer,
+        from: Square,
+    ) void {
+        _ = board;
+
+        output.add(Move.pawnSingle(from, from.forward(Color.White, 1)));
+        output.add(Move.pawnDouble(from, from.forward(Color.White, 2)));
+    }
+
+    pub fn generate(
+        comptime Buffer: type,
+        board: *const Board,
+        output: *Buffer,
     ) void {
         for (board.squares) |piece, squareIndex| {
-            std.log.warn("{}, {}", .{ piece, squareIndex });            
+            const square = Square.fromIndex(@truncate(u6, squareIndex));
+            if (!piece.getColor().equals(board.getSideToMove())) continue;
+
+            switch (piece.getDignity()) {
+                .pawn => Self.generatePawn(Buffer, board, output, square),
+                .knight => unreachable,
+                else => {},
+            }
         }
 
         if (board.getPiece(Square.A2).equals(Piece.WhitePawn)) {
-            output.add(Move.pawnSingle(Square.A2, Square.A3));
-            output.add(Move.pawnSingle(Square.B2, Square.B3));
-            output.add(Move.pawnSingle(Square.C2, Square.C3));
-            output.add(Move.pawnSingle(Square.D2, Square.D3));
-            output.add(Move.pawnSingle(Square.E2, Square.E3));
-            output.add(Move.pawnSingle(Square.F2, Square.F3));
-            output.add(Move.pawnSingle(Square.G2, Square.G3));
-            output.add(Move.pawnSingle(Square.H2, Square.H3));
-
-            output.add(Move.pawnSingle(Square.A2, Square.A4));
-            output.add(Move.pawnSingle(Square.B2, Square.B4));
-            output.add(Move.pawnSingle(Square.C2, Square.C4));
-            output.add(Move.pawnSingle(Square.D2, Square.D4));
-            output.add(Move.pawnSingle(Square.E2, Square.E4));
-            output.add(Move.pawnSingle(Square.F2, Square.F4));
-            output.add(Move.pawnSingle(Square.G2, Square.G4));
-            output.add(Move.pawnSingle(Square.H2, Square.H4));
-
             output.add(Move.pawnSingle(Square.B1, Square.A3));
             output.add(Move.pawnSingle(Square.B1, Square.C3));
             output.add(Move.pawnSingle(Square.G1, Square.F3));

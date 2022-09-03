@@ -1,3 +1,16 @@
+const Color = @import("color.zig").Color;
+
+pub const Dignity = enum(u3) {
+    none   = 0b000,
+    pawn   = 0b001,
+    knight = 0b010,
+    bishop = 0b011,
+    rook   = 0b100,
+    queen  = 0b101,
+    king   = 0b110,
+    // One free value left
+};
+
 // Piece bits:
 // 0000
 //  ^-^ - 3 dignity bits
@@ -45,5 +58,18 @@ pub const Piece = packed struct {
 
     pub inline fn equals(self: Self, other: Self) bool {
         return self.index == other.index;
+    }
+
+    pub inline fn getColor(self: Self) Color {
+        // PERF: try to make it better
+        return switch (self.index & 0b1000) {
+            0b0000 => Color.Black,
+            0b1000 => Color.White,
+            else => unreachable,
+        };
+    }
+
+    pub inline fn getDignity(self: Self) Dignity {
+        return @intToEnum(Dignity, @truncate(u3, self.index));
     }
 };
