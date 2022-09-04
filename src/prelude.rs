@@ -1,4 +1,5 @@
-pub use crate::square::Square;
-pub use crate::piece::Dignity;
-pub use crate::chess_move::Move;
-pub use crate::hint::always;
+pub use crate::chess_move::*;
+pub use crate::color::*;
+pub use crate::hint::*;
+pub use crate::piece::*;
+pub use crate::square::*;

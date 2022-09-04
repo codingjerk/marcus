@@ -1,24 +1,27 @@
 use crate::prelude::*;
 
-type Inner = u32; // PERF: try smaller and bigger types
+pub type MoveInner = u32; // PERF: try smaller and bigger types
 
 // Bit structure:
 // - - - - - - - - - - - - -
 //   ^   [  from ] [  to   ]
 //   | - captured piece
 // Total bits: 5 + 5 + 3 = 13
-pub struct Move(Inner);
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Move(MoveInner);
 
 impl Move {
+    pub const Mask: MoveInner = 0b111111111111111;
+
     // PERF: try to store Piece instead of Dignity
     pub const fn new(from: Square, to: Square, captured: Dignity) -> Self {
         let bits =
-            (from.index() as Inner)
-            ^ ((to.index() as Inner) << 6)
-            ^ ((captured.index() as Inner) << 12)
+            (from.index() as MoveInner)
+            ^ ((to.index() as MoveInner) << 6)
+            ^ ((captured.index() as MoveInner) << 12)
         ;
 
-        unsafe { always(true) }
+        unsafe { always(bits & Self::Mask == bits) }
 
         Self(bits)
     }
@@ -31,7 +34,43 @@ impl Move {
         Self::new(from, to, Dignity::None)
     }
 
-    pub const fn index(self) -> Inner {
+    pub const fn pawn_double(from: Square, to: Square) -> Self {
+        Self::new(from, to, Dignity::None)
+    }
+
+    pub const fn from(self) -> Square {
+        let index = (self.0 as SquareInner) & Square::Mask;
+
+        Square::from_index(index)
+    }
+
+    pub const fn to(self) -> Square {
+        let index = ((self.0 >> 6) as SquareInner) & Square::Mask;
+
+        Square::from_index(index)
+    }
+
+    pub const fn captured(self) -> Dignity {
+        let index = ((self.0 >> 12) as DignityInner) & Dignity::Mask;
+
+        Dignity::from_index(index)
+    }
+
+    pub const fn index(self) -> MoveInner {
         self.0
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn bit_magic() {
+        let chess_move = Move::capture(A2, A3, Dignity::None);
+
+        assert_eq!(A2, chess_move.from());
+        assert_eq!(A3, chess_move.to());
+        assert_eq!(Dignity::None, chess_move.captured());
     }
 }
