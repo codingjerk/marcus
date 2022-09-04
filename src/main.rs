@@ -1,6 +1,11 @@
+#![feature(const_for)]
+
 mod buffer;
 mod hint;
-mod move;
+mod chess_move;
+mod piece;
+mod prelude;
+mod square;
 
 fn main() {
 }

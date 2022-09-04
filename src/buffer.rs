@@ -1,6 +1,6 @@
 use std::mem::MaybeUninit;
 
-use crate::hint;
+use crate::prelude::*;
 
 pub struct StaticBuffer<E, const SIZE: usize> {
     data: [E; SIZE],
@@ -9,7 +9,7 @@ pub struct StaticBuffer<E, const SIZE: usize> {
 
 impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
     // PERF: try to add inline attribute to all small functions
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             // SAFETY
             // We return slice to only initialized values,
@@ -21,20 +21,20 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         }
     }
 
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.cursor
     }
 
-    pub fn get(&self, index: usize) -> E
+    pub const fn get(&self, index: usize) -> E
         where E: Copy
     {
-        unsafe { hint::always(index < self.cursor) }
+        unsafe { always(index < self.cursor) }
 
         self.data[index]
     }
 
     pub fn add(&mut self, value: E) {
-        unsafe { hint::always(self.cursor < SIZE) }
+        unsafe { always(self.cursor < SIZE) }
 
         self.data[self.cursor] = value;
         self.cursor += 1;

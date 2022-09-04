@@ -1,7 +1,7 @@
 use core::hint::unreachable_unchecked;
 
 #[inline(always)]
-pub unsafe fn always(condition: bool) {
+pub const unsafe fn always(condition: bool) {
     if !condition {
         if cfg!(debug_assertions) {
             unreachable!()
