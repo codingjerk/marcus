@@ -1,4 +1,4 @@
-use std::mem::{self, MaybeUninit};
+use std::mem::MaybeUninit;
 
 use crate::hint;
 
@@ -8,6 +8,7 @@ pub struct StaticBuffer<E, const SIZE: usize> {
 }
 
 impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
+    // PERF: try to add inline attribute to all small functions
     pub fn new() -> Self {
         Self {
             // SAFETY
