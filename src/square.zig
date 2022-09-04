@@ -98,6 +98,15 @@ pub const Square = packed struct {
     pub const G4 = Self{ .index = 30 };
     pub const H4 = Self{ .index = 31 };
 
+    pub const A5 = Self{ .index = 32 };
+    pub const B5 = Self{ .index = 33 };
+    pub const C5 = Self{ .index = 34 };
+    pub const D5 = Self{ .index = 35 };
+    pub const E5 = Self{ .index = 36 };
+    pub const F5 = Self{ .index = 37 };
+    pub const G5 = Self{ .index = 38 };
+    pub const H5 = Self{ .index = 39 };
+
     pub const A6 = Self{ .index = 40 };
     pub const B6 = Self{ .index = 41 };
     pub const C6 = Self{ .index = 42 };

@@ -54,6 +54,62 @@ pub const MoveGen = struct {
         }
     }
 
+    fn generateBishop(
+        comptime Buffer: type,
+        board: *const Board,
+        output: *Buffer,
+        from: Square,
+    ) void {
+        const file = from.getFileIndex();
+        const rank = from.getRankIndex();
+
+        const directions = [4][2]i8{
+            [2]i8{-1, -1},
+            [2]i8{-1,  1},
+            [2]i8{ 1, -1},
+            [2]i8{ 1,  1},
+        };
+
+        for (directions) |dir| {
+            const dix = dir[0];
+            const diy = dir[1];
+
+            var dx: i8 = 0;
+            var dy: i8 = 0;
+            while (true) {
+                dx += dix;
+                dy += diy;
+
+                if (file + dx > 7) break;
+                if (file + dx < 0) break;
+                if (rank + dy > 7) break;
+                if (rank + dy < 0) break;
+
+                std.log.warn("fr: {} {} / {} {}", .{file, dx, rank, dy});
+                var to = Square.fromFileRankIndexes(
+                    @intCast(u6, file + dx),
+                    @intCast(u6, rank + dy),
+                );
+
+                std.log.warn("1", .{});
+                // std.log.warn("to: {}", .{to});
+
+                if (board.getPiece(to).equals(Piece.None)) {
+                    output.add(Move.quiet(from, to));
+                    std.log.warn("2-1", .{});
+                } else {
+                    const piece = board.getPiece(to);
+                    if (!piece.getColor().equals(board.getSideToMove())) {
+                        output.add(Move.capture(from, to, piece));
+                    }
+
+                    std.log.warn("2-2", .{});
+                    break;
+                }
+            }
+        }
+    }
+
     pub fn generate(
         comptime Buffer: type,
         board: *const Board,
@@ -64,8 +120,9 @@ pub const MoveGen = struct {
             if (!piece.getColor().equals(board.getSideToMove())) continue;
 
             switch (piece.getDignity()) {
-                .pawn => Self.generatePawn(Buffer, board, output, square),
+                .pawn   => Self.generatePawn(Buffer, board, output, square),
                 .knight => Self.generateKnight(Buffer, board, output, square),
+                .bishop => Self.generateBishop(Buffer, board, output, square),
                 else => {},
             }
         }
@@ -91,8 +148,6 @@ test "generate emptyboard" {
 test "generate startpos" {
     const moves = testGenerate("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
-    try expectEqual(moves.length(), 20);
-
     try expect(moves.contains(Move.pawnSingle(Square.A2, Square.A3)));
     try expect(moves.contains(Move.pawnSingle(Square.B2, Square.B3)));
     try expect(moves.contains(Move.pawnSingle(Square.C2, Square.C3)));
@@ -115,4 +170,27 @@ test "generate startpos" {
     try expect(moves.contains(Move.quiet(Square.B1, Square.C3)));
     try expect(moves.contains(Move.quiet(Square.G1, Square.F3)));
     try expect(moves.contains(Move.quiet(Square.G1, Square.H3)));
+
+    try expectEqual(moves.length(), 20);
+}
+
+test "generate bishop" {
+    const moves = testGenerate("8/2B5/8/4B3/8/8/1r6/8 w - - 0 1");
+    _ = moves;
+
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.F4)));
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.G3)));
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.H2)));
+
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.F6)));
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.G7)));
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.H8)));
+
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.D6)));
+
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.D4)));
+    // try expect(moves.contains(Move.quiet(Square.E5, Square.C3)));
+    // try expect(moves.contains(Move.capture(Square.E5, Square.B2, Piece.BlackRook)));
+
+    // try expectEqual(moves.length(), 14);
 }

@@ -52,7 +52,7 @@ const expectEqual = std.testing.expectEqual;
 
 test "compiler regression" {
     const move = Move.capture(Square.A2, Square.A3, Piece.None);
-    
+
     try expectEqual(Square.A2, move.from);
     try expectEqual(Square.A3, move.to);
     try expectEqual(Piece.None, move.captured);
