@@ -8,8 +8,6 @@ pub struct Dignity(DignityInner);
 impl Dignity {
     pub const Mask: DignityInner = 0b111;
 
-    pub const None: Self = Dignity(0);
-
     pub const fn from_index(index: DignityInner) -> Self {
         unsafe { always(index & Self::Mask == index) }
 
@@ -21,7 +19,9 @@ impl Dignity {
     }
 }
 
-// PERF: try numerate from 0
+// PERF: try to numerate from 0
+pub const DignityNone: Dignity = Dignity(0);
+
 pub const Pawn: Dignity   = Dignity(1);
 pub const Knight: Dignity = Dignity(2);
 pub const Bishop: Dignity = Dignity(3);
@@ -41,8 +41,6 @@ pub struct Piece(PieceInner);
 
 impl Piece {
     pub const Mask: PieceInner = 0b1111;
-
-    pub const None: Self = Piece(0);
 
     pub const fn new(color: Color, dignity: Dignity) -> Self {
         let bits =
@@ -97,6 +95,8 @@ impl Piece {
         }
     }
 }
+
+pub const PieceNone: Piece = Piece::new(Color::from_index(0), DignityNone);
 
 pub const BlackPawn: Piece = Piece::new(Black, Pawn);
 pub const BlackKnight: Piece = Piece::new(Black, Knight);

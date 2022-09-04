@@ -31,11 +31,11 @@ impl Move {
     }
 
     pub const fn quiet(from: Square, to: Square) -> Self {
-        Self::new(from, to, Dignity::None)
+        Self::new(from, to, DignityNone)
     }
 
     pub const fn pawn_double(from: Square, to: Square) -> Self {
-        Self::new(from, to, Dignity::None)
+        Self::new(from, to, DignityNone)
     }
 
     pub const fn from(self) -> Square {
@@ -67,10 +67,10 @@ mod test {
 
     #[test]
     fn bit_magic() {
-        let chess_move = Move::capture(A2, A3, Dignity::None);
+        let chess_move = Move::capture(A2, A3, DignityNone);
 
         assert_eq!(A2, chess_move.from());
         assert_eq!(A3, chess_move.to());
-        assert_eq!(Dignity::None, chess_move.captured());
+        assert_eq!(DignityNone, chess_move.captured());
     }
 }
