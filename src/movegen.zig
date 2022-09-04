@@ -1,5 +1,6 @@
 const std = @import("std");
 const assert = std.debug.assert;
+const abs = std.math.absInt;
 
 const Board = @import("board.zig").Board;
 const Color = @import("color.zig").Color;
@@ -23,6 +24,36 @@ pub const MoveGen = struct {
         output.add(Move.pawnDouble(from, from.forward(Color.White, 2)));
     }
 
+    fn generateKnight(
+        comptime Buffer: type,
+        board: *const Board,
+        output: *Buffer,
+        from: Square,
+    ) void {
+        const file = from.getFileIndex();
+        const rank = from.getRankIndex();
+
+        for ([_]i8{ -2, -1, 1, 2 }) |dx| {
+            for ([_]i8{ -2, -1, 1, 2 }) |dy| {
+                if ((abs(dx) catch unreachable) + (abs(dy) catch unreachable) != 3) continue;
+
+                if (file + dx > 7) continue;
+                if (file + dx < 0) continue;
+                if (rank + dy > 7) continue;
+                if (rank + dy < 0) continue;
+
+                var to = Square.fromFileRankIndexes(
+                    @intCast(u6, file + dx),
+                    @intCast(u6, rank + dy),
+                );
+
+                if (board.getPiece(to).equals(Piece.None)) {
+                    output.add(Move.quiet(from, to));
+                }
+            }
+        }
+    }
+
     pub fn generate(
         comptime Buffer: type,
         board: *const Board,
@@ -34,16 +65,9 @@ pub const MoveGen = struct {
 
             switch (piece.getDignity()) {
                 .pawn => Self.generatePawn(Buffer, board, output, square),
-                .knight => unreachable,
+                .knight => Self.generateKnight(Buffer, board, output, square),
                 else => {},
             }
-        }
-
-        if (board.getPiece(Square.A2).equals(Piece.WhitePawn)) {
-            output.add(Move.pawnSingle(Square.B1, Square.A3));
-            output.add(Move.pawnSingle(Square.B1, Square.C3));
-            output.add(Move.pawnSingle(Square.G1, Square.F3));
-            output.add(Move.pawnSingle(Square.G1, Square.H3));
         }
     }
 };
@@ -68,7 +92,7 @@ test "generate startpos" {
     const moves = testGenerate("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     try expectEqual(moves.length(), 20);
-    
+
     try expect(moves.contains(Move.pawnSingle(Square.A2, Square.A3)));
     try expect(moves.contains(Move.pawnSingle(Square.B2, Square.B3)));
     try expect(moves.contains(Move.pawnSingle(Square.C2, Square.C3)));
@@ -77,7 +101,7 @@ test "generate startpos" {
     try expect(moves.contains(Move.pawnSingle(Square.F2, Square.F3)));
     try expect(moves.contains(Move.pawnSingle(Square.G2, Square.G3)));
     try expect(moves.contains(Move.pawnSingle(Square.H2, Square.H3)));
-    
+
     try expect(moves.contains(Move.pawnDouble(Square.A2, Square.A4)));
     try expect(moves.contains(Move.pawnDouble(Square.B2, Square.B4)));
     try expect(moves.contains(Move.pawnDouble(Square.C2, Square.C4)));
