@@ -25,9 +25,9 @@ pub type PieceInner = u8; // PERF: try smaller and bigger types
 
 // Bit structure:
 // - - - -
-// ^ [ - ] <- Dignity
+// ^ \ _ / <- Dignity
 // | - Color
-// Total bits: 5 + 5 + 3 = 13
+// Total bits: 1 + 3 = 4
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Piece(PieceInner);
 
