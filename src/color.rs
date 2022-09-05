@@ -14,6 +14,16 @@ impl Color {
         Self(index)
     }
 
+    #[inline(always)]
+    pub fn from_fen(fen: u8) -> Self {
+        unsafe { always(fen == b'b' || fen == b'w') }
+
+        // NOTE: by happy coincidence
+        //       code of 'b' ends with 0
+        //       and code of 'w' ends with 1
+        Self::from_index(fen & 0b1)
+    }
+
     pub const fn index(self) -> ColorInner {
         self.0
     }
@@ -31,3 +41,18 @@ impl Color {
 
 pub const Black: Color = Color(0);
 pub const White: Color = Color(1);
+
+#[cfg(test)]
+mod bench {
+    use super::*;
+
+    use test::{Bencher, black_box};
+
+    #[bench]
+    fn from_fen(b: &mut Bencher) {
+        b.iter(|| {
+            let fen = black_box(b'w');
+            black_box(Color::from_fen(fen))
+        })
+    }
+}

@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::prelude::*;
 
 pub type DignityInner = u8; // PERF: try smaller and bigger types
@@ -115,6 +117,10 @@ impl Piece {
 
             _ => unsafe { unreachable() },
         }
+    }
+
+    pub fn rand<R: Rng>(rng: &mut R) -> Self {
+        Self::from_index(rng.gen_range(1..=6))
     }
 }
 

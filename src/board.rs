@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::prelude::*;
 
 type HalfmoveClock = u16; // PERF: try smaller and bigger types
@@ -93,11 +95,7 @@ impl Board {
         }
 
         // 2. Side to move
-        match fen_char!() {
-            b'b' => { result.side_to_move = Black; },
-            b'w' => { result.side_to_move = White; },
-            _ => unsafe { unreachable() },
-        }
+        result.side_to_move = Color::from_fen(fen_char!());
         fen_index += 1;
 
         // Skip space
@@ -151,6 +149,7 @@ impl Board {
 
         // 5. Halfmove clock
         result.halfmove_clock = 0;
+        // PERF: unroll loop
         loop {
             if fen_char!() == b' ' {
                 // NOTE: we don't move forward (fen_index += 1),
@@ -252,7 +251,7 @@ impl Board {
 
         // 5. Halfmove clock
         let hmc = self.halfmove_clock();
-        unsafe { always(self.halfmove_clock <= 999) }
+        unsafe { always(self.halfmove_clock <= MAX_HALFMOVE_CLOCK) }
 
         let x = (hmc / 100 % 10) as u8;
         let y = (hmc / 10 % 10) as u8;
@@ -277,6 +276,53 @@ impl Board {
         buffer.add(b'1');
     }
 
+    // Creates random board, using `rng`
+    // NOTE: this board can be invalid chess board
+    fn rand<R: Rng>(rng: &mut R) -> Self {
+        let mut result = Self::empty();
+
+        // 1. Position
+        for square_index in 0..64 {
+            // TODO: use Square::iter()
+            let square = Square::from_index(square_index);
+            if rng.gen() {
+                result.set_piece_unchecked(square, Piece::rand(rng));
+            }
+        }
+
+        // 2. Side to move
+        if rng.gen() { result.side_to_move = Black }
+
+        // 3. Castling rights
+        if rng.gen() { result.castling_rights.allow(BlackKingSide) }
+        if rng.gen() { result.castling_rights.allow(BlackQueenSide) }
+        if rng.gen() { result.castling_rights.allow(WhiteKingSide) }
+        if rng.gen() { result.castling_rights.allow(WhiteQueenSide) }
+
+        // 4. En passant target square
+        if rng.gen() {
+            // TODO: generate rank only
+            let mut square = Square::rand(rng);
+            square.0 &= 0b000111;
+
+            if result.side_to_move == White {
+                square.0 |= 5 * 8;
+            } else {
+                square.0 |= 2 * 8;
+            }
+
+            result.enpassant_square = Some(square);
+        }
+
+        // 5. Halfmove clock
+        result.halfmove_clock = rng.gen_range(0..MAX_HALFMOVE_CLOCK);
+
+        // 6. Fullmove counter
+        // NOTE: isn't needed
+
+        result
+    }
+
     fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
         let index = at.index() as usize;
         unsafe { always(index < 64) }
@@ -288,6 +334,9 @@ impl Board {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use rand::SeedableRng;
+    use rand_xorshift::XorShiftRng;
 
     type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
 
@@ -460,6 +509,48 @@ mod tests {
             board.fen(&mut buffer);
 
             assert_eq!(buffer.as_slice(), fen);
+        }
+    }
+
+    #[test]
+    fn rand() {
+        let mut rng = XorShiftRng::from_entropy();
+
+        let mut buffer1 = FenBuffer::new();
+        let board1 = Board::rand(&mut rng);
+        board1.fen(&mut buffer1);
+
+        let mut buffer2 = FenBuffer::new();
+        let board2 = Board::rand(&mut rng);
+        board2.fen(&mut buffer2);
+
+        // NOTE: theoreticaly it is possible to randomly
+        //       get two identical positions,
+        //       but it should be **really** rare
+        assert_ne!(buffer1.as_slice(), buffer2.as_slice());
+    }
+
+    // NOTE: This test is really slow and should be run rarely
+    #[test]
+    #[ignore]
+    fn fuzz_fen() {
+        // PERF: use own RNG
+        let mut rng = XorShiftRng::from_entropy();
+        let mut buffer = FenBuffer::new();
+        let mut next_buffer = FenBuffer::new();
+
+        for _ in 0..10_000_000 {
+            let board = Board::rand(&mut rng);
+            buffer.reset();
+            board.fen(&mut buffer);
+            let fen = buffer.as_slice();
+
+            let next_board = Board::from_fen(fen);
+            next_buffer.reset();
+            next_board.fen(&mut next_buffer);
+            let next_fen = next_buffer.as_slice();
+
+            assert_eq!(fen, next_fen);
         }
     }
 }

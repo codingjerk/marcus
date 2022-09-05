@@ -31,18 +31,23 @@ impl CastlingRights {
 
     #[inline]
     pub fn set_from_fen(&mut self, fen: u8) {
-        self.0 |= match fen {
-            b'K' => WhiteKingSide.0,
-            b'Q' => WhiteQueenSide.0,
-            b'k' => BlackKingSide.0,
-            b'q' => BlackQueenSide.0,
+        self.allow(match fen {
+            b'K' => WhiteKingSide,
+            b'Q' => WhiteQueenSide,
+            b'k' => BlackKingSide,
+            b'q' => BlackQueenSide,
 
             _ => unsafe { unreachable() }
-        };
+        })
     }
 
     pub const fn is_allowed(self, other: Self) -> bool {
         (self.0 & other.0) == other.0
+    }
+
+    #[inline]
+    pub fn allow(&mut self, other: Self) {
+        self.0 |= other.0;
     }
 
     #[inline]

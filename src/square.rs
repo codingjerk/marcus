@@ -1,9 +1,11 @@
+use rand::Rng;
+
 use crate::prelude::*;
 
 pub type SquareInner = u8; // PERF: try smaller and bigger types
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Square(SquareInner);
+pub struct Square(pub SquareInner);
 
 impl Square {
     pub const Mask: SquareInner = 0b111111;
@@ -40,6 +42,10 @@ impl Square {
         }
 
         (file, rank)
+    }
+
+    pub fn rand<R: Rng>(rng: &mut R) -> Self {
+        Self::from_index(rng.gen_range(0..64))
     }
 
     pub fn move_right_unchecked(&mut self, at: SquareInner) {
