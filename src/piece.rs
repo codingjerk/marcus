@@ -78,23 +78,23 @@ impl Piece {
     }
 
     #[inline]
-    pub const fn from_fen(fen: u8) -> Self {
-        match fen {
-            b'p' => BlackPawn,
-            b'n' => BlackKnight,
-            b'b' => BlackBishop,
-            b'r' => BlackRook,
-            b'q' => BlackQueen,
-            b'k' => BlackKing,
+    #[allow(const_err)]
+    pub fn from_fen(fen: u8) -> Self {
+        // Bit structure of input (fen char)
+        // NOTE: works for ASCII encoding only
+        // w or b are have this in common:
+        //
+        // 0 1 - - - - - -
+        //     ^ \_______/ <- dignity (coded)
+        //     | reversed color (1 is black, 0 is white)
+        //
+        // Coded dignity can be casted to real dignity
+        // via inperfect hashing with lookup table
 
-            b'P' => WhitePawn,
-            b'N' => WhiteKnight,
-            b'B' => WhiteBishop,
-            b'R' => WhiteRook,
-            b'Q' => WhiteQueen,
-            b'K' => WhiteKing,
-
-            _ => unsafe { unreachable() },
+        let hash = (fen & 0b111111) as usize;
+        unsafe {
+            always(hash <= 0b110010);
+            *FEN_TO_PIECE.get_unchecked(hash)
         }
     }
 
@@ -139,3 +139,23 @@ pub const WhiteBishop: Piece = Piece::new(White, Bishop);
 pub const WhiteRook: Piece = Piece::new(White, Rook);
 pub const WhiteQueen: Piece = Piece::new(White, Queen);
 pub const WhiteKing: Piece = Piece::new(White, King);
+
+static FEN_TO_PIECE: [Piece; 0b110011] = {
+    let mut xs = [PieceNone; _];
+
+    xs[0b110000] = BlackPawn;
+    xs[0b101110] = BlackKnight;
+    xs[0b100010] = BlackBishop;
+    xs[0b110010] = BlackRook;
+    xs[0b110001] = BlackQueen;
+    xs[0b101011] = BlackKing;
+
+    xs[0b010000] = WhitePawn;
+    xs[0b001110] = WhiteKnight;
+    xs[0b000010] = WhiteBishop;
+    xs[0b010010] = WhiteRook;
+    xs[0b010001] = WhiteQueen;
+    xs[0b001011] = WhiteKing;
+
+    xs
+};

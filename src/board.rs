@@ -37,6 +37,7 @@ impl Board {
         }
     }
 
+    // TODO: use something like read buffer to share cursor
     pub fn from_fen(fen: &[u8]) -> Self {
         unsafe {
             always(fen.len() >= MIN_FEN_SIZE);
@@ -70,12 +71,23 @@ impl Board {
         }
 
         // 1. Position
-        let mut square = a8;
+        // NOTE: following code depends on specific square representation
+        //       so there are asserts for that
+        unsafe {
+            always(a1.index() == 0);
+            always(a8.index() == 56);
+            always(h8.index() == 63);
+        }
+
         let mut rank: u8 = 56;
         while rank <= 56 {
             let mut file: u8 = 0;
             while file < 8 {
                 let c = fen_char!();
+
+                // HACK: here we're doing dirty hack to just ignore
+                //       any values lesser than 1 (/ and space in valid fen)
+                //       to just keep single if here
                 if c <= b'8' {
                     file = file.wrapping_add(c.wrapping_sub(b'1'));
                 } else {
