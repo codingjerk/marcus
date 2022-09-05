@@ -43,7 +43,6 @@ impl Board {
             always(fen.len() <= MAX_FEN_SIZE);
         }
 
-        // let mut result: Self = unsafe undefined() };
         let mut result = Self {
             squares: [PieceNone; 64],
             side_to_move: unsafe { undefined() },
