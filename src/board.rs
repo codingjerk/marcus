@@ -200,9 +200,9 @@ impl Board {
     // PERF: check if #[inline] works good here
     pub fn fen(&self, buffer: &mut StaticBuffer<u8, MAX_FEN_SIZE>) {
         // 1. Position
-        let mut empty_count: u8 = 0;
         // TODO: use File, Rank and iterators
         for rank in (0..8).rev() {
+            let mut empty_count: u8 = 0;
             for file in 0..8 {
                 let square = Square::from_index(file ^ rank * 8);
                 let piece = self.piece(square);
@@ -221,7 +221,6 @@ impl Board {
             if empty_count != 0 {
                 buffer.add(b'0' ^ empty_count);
             }
-            empty_count = 0;
 
             if rank != 0 {
                 buffer.add(b'/');
