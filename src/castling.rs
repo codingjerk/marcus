@@ -29,6 +29,7 @@ impl CastlingRights {
         self.0 = 0;
     }
 
+    #[inline]
     pub fn set_from_fen(&mut self, fen: u8) {
         self.0 |= match fen {
             b'K' => WhiteKingSide.0,

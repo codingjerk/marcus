@@ -75,6 +75,7 @@ impl Piece {
         Color::from_index(index)
     }
 
+    #[inline]
     pub fn from_fen(fen: u8) -> Self {
         match fen {
             b'p' => BlackPawn,

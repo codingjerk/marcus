@@ -62,15 +62,15 @@ impl Move {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
     fn bit_magic() {
-        let chess_move = Move::capture(A2, A3, DignityNone);
+        let chess_move = Move::capture(a2, a3, DignityNone);
 
-        assert_eq!(A2, chess_move.from());
-        assert_eq!(A3, chess_move.to());
+        assert_eq!(a2, chess_move.from());
+        assert_eq!(a3, chess_move.to());
         assert_eq!(DignityNone, chess_move.captured());
     }
 }

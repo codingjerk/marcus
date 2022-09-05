@@ -58,7 +58,7 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
