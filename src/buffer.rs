@@ -55,6 +55,10 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
 
         false
     }
+
+    pub fn reset(&mut self) {
+        self.cursor = 0;
+    }
 }
 
 #[cfg(test)]
@@ -79,5 +83,8 @@ mod tests {
         assert!(buffer.contains(42));
 
         assert_eq!(buffer.as_slice(), &[99, 42]);
+
+        buffer.reset();
+        assert_eq!(buffer.len(), 0);
     }
 }

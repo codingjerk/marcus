@@ -41,61 +41,67 @@ impl Board {
             always(fen.len() <= MAX_FEN_SIZE);
         }
 
-        let mut result: Self = unsafe { undefined() };
+        // let mut result: Self = unsafe undefined() };
+        let mut result = Self {
+            squares: [PieceNone; 64],
+            side_to_move: unsafe { undefined() },
+            castling_rights: unsafe { undefined() },
+            enpassant_square: unsafe { undefined() },
+            halfmove_clock: unsafe { undefined() },
+        };
 
-        let mut fen_index: usize = 0; // PERF: try smaller types
+        let mut fen_index: u8 = 0;
 
         macro_rules! fen_char {
             () => {
                 unsafe {
-                    always(fen_index < fen.len());
-                    *fen.get_unchecked(fen_index)
+                    always((fen_index as usize) < fen.len());
+                    *fen.get_unchecked(fen_index as usize)
                 }
+            }
+        }
+
+        macro_rules! expect_char {
+            ($e:expr) => {
+                let c = fen_char!();
+                unsafe { always(c == $e) };
             }
         }
 
         // 1. Position
         let mut square = a8;
-        loop {
-            match fen_char!() {
-                skip @ b'1' ..= b'8' => {
-                    let skip = skip - b'0';
+        let mut rank: u8 = 56;
+        while rank <= 56 {
+            let mut file: u8 = 0;
+            while file < 8 {
+                let c = fen_char!();
+                if c <= b'8' {
+                    file = file.wrapping_add(c.wrapping_sub(b'1'));
+                } else {
+                    let piece = Piece::from_fen(c);
+                    let square = Square::from_index(file ^ rank);
 
-                    unsafe {
-                        always(skip >= 1);
-                        always(skip <= 8);
-                    }
+                    result.set_piece_unchecked(square, piece);
+                }
 
-                    for _ in 0..skip {
-                        result.set_piece_unchecked(square, PieceNone);
-                        square.move_right_unchecked(1);
-                    }
-                },
-                b'/' => square.move_down_unchecked(2),
-                b' ' => {
-                    unsafe { always(square == a2) }
-                    fen_index += 1;
-                    break;
-                },
-                piece => {
-                    result.set_piece_unchecked(square, Piece::from_fen(piece));
-                    square.move_right_unchecked(1);
-                },
+                file += 1;
+                fen_index += 1;
             }
 
+            rank = rank.wrapping_sub(8);
             fen_index += 1;
         }
 
         // 2. Side to move
-        result.side_to_move = match fen_char!() {
-            b'b' => Black,
-            b'w' => White,
+        match fen_char!() {
+            b'b' => { result.side_to_move = Black; },
+            b'w' => { result.side_to_move = White; },
             _ => unsafe { unreachable() },
-        };
+        }
         fen_index += 1;
 
         // Skip space
-        unsafe { always(fen[fen_index] == b' ') }
+        expect_char!(b' ');
         fen_index += 1;
 
         // 3. Castling rights
@@ -108,7 +114,7 @@ impl Board {
                 },
                 b'-' => {
                     fen_index += 1;
-                    unsafe { always(fen[fen_index] == b' ') }
+                    expect_char!(b' ');
                     fen_index += 1;
                     break;
                 },
@@ -124,14 +130,14 @@ impl Board {
         if fen_char!() == b'-' {
             result.enpassant_square = None;
             fen_index += 1;
-            unsafe { always(fen[fen_index] == b' ') }
+            expect_char!(b' ');
             fen_index += 1;
-        } else {
+        } else { // PERF: parse only file and calculate rank based on side_to_move
             let file = fen_char!();
             fen_index += 1;
             let rank = fen_char!();
             fen_index += 1;
-            unsafe { always(fen[fen_index] == b' ') }
+            expect_char!(b' ');
             fen_index += 1;
 
             if result.side_to_move == White {
@@ -147,7 +153,9 @@ impl Board {
         result.halfmove_clock = 0;
         loop {
             if fen_char!() == b' ' {
-                // fen_index += 1;
+                // NOTE: we don't move forward (fen_index += 1),
+                //       cause we don't parse fullmove counter
+                //       at all
                 break;
             }
 
@@ -155,7 +163,8 @@ impl Board {
             unsafe { always(b'0' <= digit && digit <= b'9') }
 
             result.halfmove_clock *= 10;
-            result.halfmove_clock += (digit - b'0') as HalfmoveClock;
+            // NOTE: x & 0b1111 is equivalent to x - b'0' (if b'0' <= digit <= b'9')
+            result.halfmove_clock += (digit & 0b1111) as HalfmoveClock;
 
             fen_index += 1;
         }
@@ -189,6 +198,85 @@ impl Board {
         self.halfmove_clock
     }
 
+    // PERF: check if #[inline] works good here
+    pub fn fen(&self, buffer: &mut StaticBuffer<u8, MAX_FEN_SIZE>) {
+        // 1. Position
+        let mut empty_count: u8 = 0;
+        // TODO: use File, Rank and iterators
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                let square = Square::from_index(file ^ rank * 8);
+                let piece = self.piece(square);
+
+                if piece == PieceNone {
+                    empty_count += 1;
+                } else {
+                    if empty_count != 0 {
+                        buffer.add(b'0' ^ empty_count);
+                    }
+                    empty_count = 0;
+                    buffer.add(piece.fen());
+                }
+            }
+
+            if empty_count != 0 {
+                buffer.add(b'0' ^ empty_count);
+            }
+            empty_count = 0;
+
+            if rank != 0 {
+                buffer.add(b'/');
+            }
+        }
+
+        buffer.add(b' ');
+
+        // 2. Side to move
+        buffer.add(self.side_to_move().fen());
+        buffer.add(b' ');
+
+        // 3. Castling rights
+        self.castling_rights().fen(buffer);
+        buffer.add(b' ');
+
+        // 4. En passant target square
+        match self.enpassant_square() {
+            Some(square) => {
+                let (file, rank) = square.fen();
+                buffer.add(file);
+                buffer.add(rank);
+            },
+            None => buffer.add(b'-'),
+        }
+        buffer.add(b' ');
+
+        // 5. Halfmove clock
+        let hmc = self.halfmove_clock();
+        unsafe { always(self.halfmove_clock <= 999) }
+
+        let x = (hmc / 100 % 10) as u8;
+        let y = (hmc / 10 % 10) as u8;
+        let z = (hmc % 10) as u8;
+
+        if x != 0 {
+            // NOTE: b'0' ^ x is equivalent of b'0' + x (if 0 <= x <= 9)
+            buffer.add(b'0' ^ x);
+            buffer.add(b'0' ^ y);
+            buffer.add(b'0' ^ z);
+        } else if y != 0 {
+            buffer.add(b'0' ^ y);
+            buffer.add(b'0' ^ z);
+        } else {
+            buffer.add(b'0' ^ z);
+        }
+
+        buffer.add(b' ');
+
+        // 6. Fullmove counter
+        // NOTE: isn't used
+        buffer.add(b'1');
+    }
+
     fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
         let index = at.index() as usize;
         unsafe { always(index < 64) }
@@ -200,6 +288,8 @@ impl Board {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
 
     #[test]
     fn from_fen_empty() {
@@ -297,6 +387,81 @@ mod tests {
             assert_eq!(board.halfmove_clock(), expected);
         }
     }
+
+    #[test]
+    fn to_fen_startpos() {
+        let fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        let board = Board::from_fen(fen);
+
+        let mut buffer = FenBuffer::new();
+        board.fen(&mut buffer);
+        assert_eq!(buffer.as_slice(), fen);
+    }
+
+    #[test]
+    fn to_fen_trailing_empty_count() {
+        let fen = b"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
+        let board = Board::from_fen(fen);
+
+        let mut buffer = FenBuffer::new();
+        board.fen(&mut buffer);
+        assert_eq!(buffer.as_slice(), fen);
+    }
+
+    #[test]
+    fn to_fen_castling() {
+        let examples: [&[u8]; _] = [
+            b"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+            b"r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1",
+            b"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 1",
+        ];
+
+        let mut buffer = FenBuffer::new();
+        for fen in examples {
+            let board = Board::from_fen(fen);
+            buffer.reset();
+            board.fen(&mut buffer);
+
+            assert_eq!(buffer.as_slice(), fen);
+        }
+    }
+
+    #[test]
+    fn to_fen_en_passant() {
+        let examples: [&[u8]; _] = [
+            b"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+            b"rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 1",
+        ];
+
+        let mut buffer = FenBuffer::new();
+        for fen in examples {
+            let board = Board::from_fen(fen);
+            buffer.reset();
+            board.fen(&mut buffer);
+
+            assert_eq!(buffer.as_slice(), fen);
+        }
+    }
+
+    #[test]
+    fn to_fen_hmc_fmc() {
+        let examples: [&[u8]; _] = [
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 9 1",
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 56 1",
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 20 1",
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 99 1",
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 999 1",
+        ];
+
+        let mut buffer = FenBuffer::new();
+        for fen in examples {
+            let board = Board::from_fen(fen);
+            buffer.reset();
+            board.fen(&mut buffer);
+
+            assert_eq!(buffer.as_slice(), fen);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -318,6 +483,39 @@ mod bench {
         b.iter(|| {
             let fen = black_box(b"rnbqkbnr/pppppppp/qqqqqqqq/qqqqqqqq/QQQQQQQQ/QQQQQQQQ/PPPPPPPP/RNBQKBNR w KQkq e6 0 1");
             Board::from_fen(fen)
+        })
+    }
+
+    #[bench]
+    fn to_fen_empty(b: &mut Bencher) {
+        let board = black_box(Board::empty());
+        let mut buffer = StaticBuffer::<u8, MAX_FEN_SIZE>::new();
+
+        b.iter(|| {
+            buffer.reset();
+            board.fen(&mut buffer);
+        })
+    }
+
+    #[bench]
+    fn to_fen_startpos(b: &mut Bencher) {
+        let board = black_box(Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+        let mut buffer = StaticBuffer::<u8, MAX_FEN_SIZE>::new();
+
+        b.iter(|| {
+            buffer.reset();
+            board.fen(&mut buffer);
+        })
+    }
+
+    #[bench]
+    fn to_fen_fullpos(b: &mut Bencher) {
+        let board = black_box(Board::from_fen(b"rnbqkbnr/pppppppp/qqqqqqqq/qqqqqqqq/QQQQQQQQ/QQQQQQQQ/PPPPPPPP/RNBQKBNR w KQkq e6 0 1"));
+        let mut buffer = StaticBuffer::<u8, MAX_FEN_SIZE>::new();
+
+        b.iter(|| {
+            buffer.reset();
+            board.fen(&mut buffer);
         })
     }
 }

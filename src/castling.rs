@@ -40,6 +40,34 @@ impl CastlingRights {
             _ => unsafe { unreachable() }
         };
     }
+
+    pub const fn is_allowed(self, other: Self) -> bool {
+        (self.0 & other.0) == other.0
+    }
+
+    #[inline]
+    pub fn fen(self, buffer: &mut StaticBuffer<u8, 90>) {
+        if self == CastlingRightsNone {
+            buffer.add(b'-');
+            return;
+        }
+
+        if self.is_allowed(WhiteKingSide) {
+            buffer.add(b'K');
+        }
+
+        if self.is_allowed(WhiteQueenSide) {
+            buffer.add(b'Q');
+        }
+
+        if self.is_allowed(BlackKingSide) {
+            buffer.add(b'k');
+        }
+
+        if self.is_allowed(BlackQueenSide) {
+            buffer.add(b'q');
+        }
+    }
 }
 
 pub const CastlingRightsNone: CastlingRights = CastlingRights(0b0000);

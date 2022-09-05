@@ -36,7 +36,7 @@ pub type PieceInner = u8; // PERF: try smaller and bigger types
 // ^ \ _ / <- Dignity
 // | - Color
 // Total bits: 1 + 3 = 4
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Piece(PieceInner);
 
 impl Piece {
@@ -76,7 +76,7 @@ impl Piece {
     }
 
     #[inline]
-    pub fn from_fen(fen: u8) -> Self {
+    pub const fn from_fen(fen: u8) -> Self {
         match fen {
             b'p' => BlackPawn,
             b'n' => BlackKnight,
@@ -91,6 +91,27 @@ impl Piece {
             b'R' => WhiteRook,
             b'Q' => WhiteQueen,
             b'K' => WhiteKing,
+
+            _ => unsafe { unreachable() },
+        }
+    }
+
+    #[inline]
+    pub const fn fen(self) -> u8 {
+        match self {
+             BlackPawn => b'p',
+             BlackKnight => b'n',
+             BlackBishop => b'b',
+             BlackRook => b'r',
+             BlackQueen => b'q',
+             BlackKing => b'k',
+
+             WhitePawn => b'P',
+             WhiteKnight => b'N',
+             WhiteBishop => b'B',
+             WhiteRook => b'R',
+             WhiteQueen => b'Q',
+             WhiteKing => b'K',
 
             _ => unsafe { unreachable() },
         }

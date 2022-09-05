@@ -29,6 +29,19 @@ impl Square {
         self.0
     }
 
+    #[inline]
+    pub const fn fen(self) -> (u8, u8) {
+        let file = b'a' + (self.0 % 8);
+        let rank = b'1' + (self.0 / 8);
+
+        unsafe {
+            always(b'a' <= file && file <= b'h');
+            always(b'1' <= rank && rank <= b'8');
+        }
+
+        (file, rank)
+    }
+
     pub fn move_right_unchecked(&mut self, at: SquareInner) {
         unsafe {
             always(self.0 + at <= 100);
