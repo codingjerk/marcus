@@ -37,7 +37,7 @@ impl Board {
         }
     }
 
-    // TODO: use something like read buffer to share cursor
+    // TODO: use something like read buffer to share cursor (fen_index)
     pub fn from_fen(fen: &[u8]) -> Self {
         unsafe {
             always(fen.len() >= MIN_FEN_SIZE);
@@ -79,8 +79,7 @@ impl Board {
             always(h8.index() == 63);
         }
 
-        let mut rank: u8 = 56;
-        while rank <= 56 {
+        for rank in Rank::top_to_bottom() {
             let mut file: u8 = 0;
             while file < 8 {
                 let c = fen_char!();
@@ -92,7 +91,7 @@ impl Board {
                     file = file.wrapping_add(c.wrapping_sub(b'1'));
                 } else {
                     let piece = Piece::from_fen(c);
-                    let square = Square::from_index(file ^ rank);
+                    let square = Square::from_file_rank(File::from_index(file), rank);
 
                     result.set_piece_unchecked(square, piece);
                 }
@@ -101,7 +100,6 @@ impl Board {
                 fen_index += 1;
             }
 
-            rank = rank.wrapping_sub(8);
             fen_index += 1;
         }
 
@@ -161,6 +159,7 @@ impl Board {
         // 5. Halfmove clock
         result.halfmove_clock = 0;
         // PERF: unroll loop
+        // PERF: use array with powers of 10
         loop {
             if fen_char!() == b' ' {
                 // NOTE: we don't move forward (fen_index += 1),
@@ -174,7 +173,8 @@ impl Board {
 
             result.halfmove_clock *= 10;
             // NOTE: x & 0b1111 is equivalent to x - b'0' (if b'0' <= digit <= b'9')
-            result.halfmove_clock += (digit & 0b1111) as HalfmoveClock;
+            //       x ^ 0b110000 is the same thing for that range
+            result.halfmove_clock += (digit ^ 0b110000) as HalfmoveClock;
 
             fen_index += 1;
         }
@@ -211,11 +211,10 @@ impl Board {
     // PERF: check if #[inline] works good here
     pub fn fen(&self, buffer: &mut StaticBuffer<u8, MAX_FEN_SIZE>) {
         // 1. Position
-        // TODO: use File, Rank and iterators
-        for rank in (0..8).rev() {
+        for rank in Rank::top_to_bottom() {
             let mut empty_count: u8 = 0;
-            for file in 0..8 {
-                let square = Square::from_index(file ^ rank * 8);
+            for file in File::a_to_h() {
+                let square = Square::from_file_rank(file, rank);
                 let piece = self.piece(square);
 
                 if piece == PieceNone {
@@ -233,7 +232,7 @@ impl Board {
                 buffer.add(b'0' ^ empty_count);
             }
 
-            if rank != 0 {
+            if rank != Rank1 {
                 buffer.add(b'/');
             }
         }
@@ -292,9 +291,7 @@ impl Board {
         let mut result = Self::empty();
 
         // 1. Position
-        for square_index in 0..64 {
-            // TODO: use Square::iter()
-            let square = Square::from_index(square_index);
+        for square in Square::iter() {
             if rng.gen() {
                 result.set_piece_unchecked(square, Piece::rand(rng));
             }
@@ -311,17 +308,10 @@ impl Board {
 
         // 4. En passant target square
         if rng.gen() {
-            // TODO: generate rank only
-            let mut square = Square::rand(rng);
-            square.0 &= 0b000111;
+            let file = File::rand(rng);
+            let rank = Rank::en_passant(result.side_to_move());
 
-            if result.side_to_move == White {
-                square.0 |= 5 * 8;
-            } else {
-                square.0 |= 2 * 8;
-            }
-
-            result.enpassant_square = Some(square);
+            result.enpassant_square = Some(Square::from_file_rank(file, rank));
         }
 
         // 5. Halfmove clock
@@ -549,7 +539,7 @@ mod tests {
         let mut buffer = FenBuffer::new();
         let mut next_buffer = FenBuffer::new();
 
-        for _ in 0..10_000_000 {
+        for _ in 0..(72_993 * FUZZ_MULTIPLIER) {
             let board = Board::rand(&mut rng);
             buffer.reset();
             board.fen(&mut buffer);

@@ -7,6 +7,7 @@
 #![allow(unused_mut)]
 
 #![feature(const_for)]
+#![feature(const_slice_index)]
 #![feature(generic_arg_infer)]
 #![feature(unchecked_math)]
 
@@ -21,6 +22,7 @@ mod color;
 mod hint;
 mod piece;
 mod prelude;
+mod settings;
 mod square;
 mod util;
 

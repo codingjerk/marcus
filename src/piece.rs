@@ -66,20 +66,20 @@ impl Piece {
     }
 
     pub const fn dignity(self) -> Dignity {
-        let index = (self.0 as DignityInner) & Dignity::Mask;
+        let index = (self.index() as DignityInner) & Dignity::Mask;
 
         Dignity::from_index(index)
     }
 
     pub const fn color(self) -> Color {
-        let index = ((self.0 >> 3) as ColorInner) & Color::Mask;
+        let index = ((self.index() >> 3) as ColorInner) & Color::Mask;
 
         Color::from_index(index)
     }
 
     #[inline]
     #[allow(const_err)]
-    pub fn from_fen(fen: u8) -> Self {
+    pub const fn from_fen(fen: u8) -> Self {
         // Bit structure of input (fen char)
         // NOTE: works for ASCII encoding only
         // w or b are have this in common:
@@ -90,6 +90,25 @@ impl Piece {
         //
         // Coded dignity can be casted to real dignity
         // via inperfect hashing with lookup table
+        const FEN_TO_PIECE: [Piece; 0b110011] = {
+            let mut xs = [PieceNone; _];
+
+            xs[0b110000] = BlackPawn;
+            xs[0b101110] = BlackKnight;
+            xs[0b100010] = BlackBishop;
+            xs[0b110010] = BlackRook;
+            xs[0b110001] = BlackQueen;
+            xs[0b101011] = BlackKing;
+
+            xs[0b010000] = WhitePawn;
+            xs[0b001110] = WhiteKnight;
+            xs[0b000010] = WhiteBishop;
+            xs[0b010010] = WhiteRook;
+            xs[0b010001] = WhiteQueen;
+            xs[0b001011] = WhiteKing;
+
+            xs
+        };
 
         let hash = (fen & 0b111111) as usize;
         unsafe {
@@ -99,23 +118,32 @@ impl Piece {
     }
 
     #[inline]
+    #[allow(const_err)]
     pub const fn fen(self) -> u8 {
-        match self {
-             BlackPawn => b'p',
-             BlackKnight => b'n',
-             BlackBishop => b'b',
-             BlackRook => b'r',
-             BlackQueen => b'q',
-             BlackKing => b'k',
+        const PIECE_TO_FEN: [u8; PieceMax.index() as usize + 1] = {
+            let mut xs = [0; _];
 
-             WhitePawn => b'P',
-             WhiteKnight => b'N',
-             WhiteBishop => b'B',
-             WhiteRook => b'R',
-             WhiteQueen => b'Q',
-             WhiteKing => b'K',
+            xs[BlackPawn.index() as usize] = b'p';
+            xs[BlackKnight.index() as usize] = b'k';
+            xs[BlackBishop.index() as usize] = b'b';
+            xs[BlackRook.index() as usize] = b'r';
+            xs[BlackQueen.index() as usize] = b'q';
+            xs[BlackKing.index() as usize] = b'k';
 
-            _ => unsafe { unreachable() },
+            xs[WhitePawn.index() as usize] = b'p';
+            xs[WhiteKnight.index() as usize] = b'k';
+            xs[WhiteBishop.index() as usize] = b'b';
+            xs[WhiteRook.index() as usize] = b'r';
+            xs[WhiteQueen.index() as usize] = b'q';
+            xs[WhiteKing.index() as usize] = b'k';
+
+            xs
+        };
+
+        let index = self.index();
+        unsafe {
+            always(index <= PieceMax.index());
+            *PIECE_TO_FEN.get_unchecked(index as usize)
         }
     }
 
@@ -140,22 +168,4 @@ pub const WhiteRook: Piece = Piece::new(White, Rook);
 pub const WhiteQueen: Piece = Piece::new(White, Queen);
 pub const WhiteKing: Piece = Piece::new(White, King);
 
-static FEN_TO_PIECE: [Piece; 0b110011] = {
-    let mut xs = [PieceNone; _];
-
-    xs[0b110000] = BlackPawn;
-    xs[0b101110] = BlackKnight;
-    xs[0b100010] = BlackBishop;
-    xs[0b110010] = BlackRook;
-    xs[0b110001] = BlackQueen;
-    xs[0b101011] = BlackKing;
-
-    xs[0b010000] = WhitePawn;
-    xs[0b001110] = WhiteKnight;
-    xs[0b000010] = WhiteBishop;
-    xs[0b010010] = WhiteRook;
-    xs[0b010001] = WhiteQueen;
-    xs[0b001011] = WhiteKing;
-
-    xs
-};
+pub const PieceMax: Piece = WhiteKing;

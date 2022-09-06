@@ -31,14 +31,21 @@ impl CastlingRights {
 
     #[inline]
     pub fn set_from_fen(&mut self, fen: u8) {
-        self.allow(match fen {
-            b'K' => WhiteKingSide,
-            b'Q' => WhiteQueenSide,
-            b'k' => BlackKingSide,
-            b'q' => BlackQueenSide,
+        const FEN_TO_CASTLING: [CastlingRights; b'q' as usize + 1] = {
+            let mut xs = [CastlingRightsNone; _];
 
-            _ => unsafe { unreachable() }
-        })
+            xs[b'K' as usize] = WhiteKingSide;
+            xs[b'Q' as usize] = WhiteQueenSide;
+            xs[b'k' as usize] = BlackKingSide;
+            xs[b'q' as usize] = BlackQueenSide;
+
+            xs
+        };
+
+        let castling = unsafe { *FEN_TO_CASTLING.get_unchecked(fen as usize) };
+        unsafe { always(castling != CastlingRightsNone) }
+
+        self.allow(castling);
     }
 
     pub const fn is_allowed(self, other: Self) -> bool {
