@@ -20,6 +20,7 @@ mod castling;
 mod chess_move;
 mod color;
 mod hint;
+mod move_generator;
 mod piece;
 mod prelude;
 mod rand;

@@ -1,3 +1,4 @@
+pub use crate::board::*;
 pub use crate::buffer::*;
 pub use crate::castling::*;
 pub use crate::chess_move::*;
