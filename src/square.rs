@@ -8,7 +8,6 @@ pub type SquareInner = u8; // PERF: try smaller and bigger types
 //   | - rank
 // Total bits: 3 + 3 = 6
 #[derive(Copy, Clone, Debug, PartialEq)]
-// TODO: make inner value private
 pub struct Square(SquareInner);
 
 impl Square {
