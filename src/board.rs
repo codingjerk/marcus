@@ -545,6 +545,8 @@ mod bench {
 
     use test::{Bencher, black_box};
 
+    type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
+
     #[bench]
     fn from_fen_startpos(b: &mut Bencher) {
         b.iter(|| {
@@ -564,7 +566,7 @@ mod bench {
     #[bench]
     fn to_fen_empty(b: &mut Bencher) {
         let board = black_box(Board::empty());
-        let mut buffer = StaticBuffer::<u8, MAX_FEN_SIZE>::new();
+        let mut buffer = FenBuffer::new();
 
         b.iter(|| {
             buffer.reset();
@@ -575,7 +577,7 @@ mod bench {
     #[bench]
     fn to_fen_startpos(b: &mut Bencher) {
         let board = black_box(Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-        let mut buffer = StaticBuffer::<u8, MAX_FEN_SIZE>::new();
+        let mut buffer = FenBuffer::new();
 
         b.iter(|| {
             buffer.reset();
@@ -586,7 +588,7 @@ mod bench {
     #[bench]
     fn to_fen_fullpos(b: &mut Bencher) {
         let board = black_box(Board::from_fen(b"rnbqkbnr/pppppppp/qqqqqqqq/qqqqqqqq/QQQQQQQQ/QQQQQQQQ/PPPPPPPP/RNBQKBNR w KQkq e6 0 1"));
-        let mut buffer = StaticBuffer::<u8, MAX_FEN_SIZE>::new();
+        let mut buffer = FenBuffer::new();
 
         b.iter(|| {
             buffer.reset();
