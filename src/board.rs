@@ -20,10 +20,7 @@ pub struct Board {
     // TODO: move to array
     // PERF: try different memory layouts
     castling_rights: CastlingRights,
-
-    // PERF: try to store only enpassant file
-    // PERF: try to use "invalid enpassant square", like E4
-    enpassant_square: Option<Square>,
+    en_passant_file: File,
 }
 
 impl Board {
@@ -32,7 +29,7 @@ impl Board {
             squares: [PieceNone; 64],
             side_to_move: White,
             castling_rights: CastlingRightsNone,
-            enpassant_square: None,
+            en_passant_file: FileEnPassantNone,
             halfmove_clock: 0,
         }
     }
@@ -48,7 +45,7 @@ impl Board {
             squares: [PieceNone; 64],
             side_to_move: unsafe { undefined() },
             castling_rights: unsafe { undefined() },
-            enpassant_square: unsafe { undefined() },
+            en_passant_file: unsafe { undefined() },
             halfmove_clock: unsafe { undefined() },
         };
 
@@ -63,10 +60,11 @@ impl Board {
             }
         }
 
-        macro_rules! expect_char {
+        macro_rules! skip_char {
             ($e:expr) => {
                 let c = fen_char!();
                 unsafe { always(c == $e) };
+                fen_index += 1;
             }
         }
 
@@ -108,8 +106,7 @@ impl Board {
         fen_index += 1;
 
         // Skip space
-        expect_char!(b' ');
-        fen_index += 1;
+        skip_char!(b' ');
 
         // 3. Castling rights
         result.castling_rights.unset();
@@ -121,8 +118,7 @@ impl Board {
                 },
                 b'-' => {
                     fen_index += 1;
-                    expect_char!(b' ');
-                    fen_index += 1;
+                    skip_char!(b' ');
                     break;
                 },
                 right => {
@@ -135,25 +131,20 @@ impl Board {
 
         // 4. En passant target square
         if fen_char!() == b'-' {
-            result.enpassant_square = None;
+            result.en_passant_file = FileEnPassantNone;
             fen_index += 1;
-            expect_char!(b' ');
-            fen_index += 1;
-        } else { // PERF: parse only file and calculate rank based on side_to_move
-            let file = fen_char!();
-            fen_index += 1;
-            let rank = fen_char!();
-            fen_index += 1;
-            expect_char!(b' ');
+            skip_char!(b' ');
+        } else {
+            result.en_passant_file = File::from_fen(fen_char!());
             fen_index += 1;
 
             if result.side_to_move == White {
-                unsafe { always(rank == b'6') }
+                skip_char!(b'6');
             } else {
-                unsafe { always(rank == b'3') }
+                skip_char!(b'3');
             }
 
-            result.enpassant_square = Some(Square::from_fen(file, rank));
+            skip_char!(b' ');
         }
 
         // 5. Halfmove clock
@@ -200,8 +191,8 @@ impl Board {
         self.castling_rights
     }
 
-    pub const fn enpassant_square(&self) -> Option<Square> {
-        self.enpassant_square
+    pub const fn en_passant_file(&self) -> File {
+        self.en_passant_file
     }
 
     pub const fn halfmove_clock(&self) -> HalfmoveClock {
@@ -248,13 +239,13 @@ impl Board {
         buffer.add(b' ');
 
         // 4. En passant target square
-        match self.enpassant_square() {
-            Some(square) => {
-                let (file, rank) = square.fen();
-                buffer.add(file);
-                buffer.add(rank);
-            },
-            None => buffer.add(b'-'),
+        let ep = self.en_passant_file();
+        if ep.is_en_passant_none() {
+            buffer.add(b'-');
+        } else {
+            let rank = Rank::en_passant(self.side_to_move());
+            buffer.add(ep.fen());
+            buffer.add(rank.fen());
         }
         buffer.add(b' ');
 
@@ -308,10 +299,7 @@ impl Board {
 
         // 4. En passant target square
         if rng.gen() {
-            let file = File::rand(rng);
-            let rank = Rank::en_passant(result.side_to_move());
-
-            result.enpassant_square = Some(Square::from_file_rank(file, rank));
+            result.en_passant_file = File::rand(rng);
         }
 
         // 5. Halfmove clock
@@ -413,14 +401,14 @@ mod tests {
     }
 
     #[test]
-    fn from_fen_enpassant() {
+    fn from_fen_en_passant() {
         for (fen, expected) in [
-            (&b"8/8/8/8/8/8/8/8 b - - 0 1"[..], None),
-            (&b"8/8/8/8/8/8/8/8 b - e3 0 1"[..], Some(e3)),
-            (&b"8/8/8/8/8/8/8/8 w - c6 0 1"[..], Some(c6)),
+            (&b"8/8/8/8/8/8/8/8 b - - 0 1"[..], FileEnPassantNone),
+            (&b"8/8/8/8/8/8/8/8 b - e3 0 1"[..], FileE),
+            (&b"8/8/8/8/8/8/8/8 w - c6 0 1"[..], FileC),
         ] {
             let board = Board::from_fen(fen);
-            assert_eq!(board.enpassant_square(), expected);
+            assert_eq!(board.en_passant_file(), expected);
         }
     }
 

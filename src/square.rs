@@ -158,12 +158,28 @@ impl File {
         Self(index)
     }
 
+    pub const fn from_fen(fen: u8) -> Self {
+        unsafe { always(b'a' <= fen && fen <= b'h') }
+
+        Self::from_index(fen - b'a')
+    }
+
     pub const fn a_to_h() -> FileIterator {
         FileIterator(FileA)
     }
 
     pub fn rand<R: Rng>(rng: &mut R) -> Self {
         Self::from_index(rng.gen_range(0..8))
+    }
+
+    // TODO: move en passant possibility to separate board field and
+    // disallow to use more than 3 bits here
+    pub const fn is_en_passant_none(self) -> bool {
+        (self.0 & 64) != 0
+    }
+
+    pub const fn fen(self) -> u8 {
+        b'a' + self.0
     }
 }
 
@@ -175,6 +191,10 @@ pub const FileE: File = File(4);
 pub const FileF: File = File(5);
 pub const FileG: File = File(6);
 pub const FileH: File = File(7);
+
+// NOTE: this is not valid File and even not valid Square
+//       to catch if it will be used somethere except of checking
+pub const FileEnPassantNone: File = File(64);
 
 pub struct FileIterator(File);
 
@@ -197,7 +217,7 @@ impl Iterator for FileIterator {
 pub struct Rank(SquareInner);
 
 impl Rank {
-    pub const Mask: SquareInner = 0b000111;
+    pub const Mask: SquareInner = 0b111000;
 
     pub const fn top_to_bottom() -> RevRankIterator {
         RevRankIterator(Rank8)
@@ -209,6 +229,10 @@ impl Rank {
             White => Rank6,
             _ => unsafe { unreachable() },
         }
+    }
+
+    pub const fn fen(self) -> u8 {
+        b'1' + (self.0 / 8)
     }
 }
 
