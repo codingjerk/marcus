@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::prelude::*;
 
 pub type DignityInner = u8; // PERF: try smaller and bigger types
@@ -147,8 +145,8 @@ impl Piece {
         }
     }
 
-    pub fn rand<R: Rng>(rng: &mut R) -> Self {
-        Self::from_index(rng.gen_range(1..=6))
+    pub fn rand(rng: &mut FastRng) -> Self {
+        Self::from_index(rng.rand_range_u8(1, 7))
     }
 }
 

@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::prelude::*;
 
 type HalfmoveClock = u16; // PERF: try smaller and bigger types
@@ -278,32 +276,32 @@ impl Board {
 
     // Creates random board, using `rng`
     // NOTE: this board can be invalid chess board
-    fn rand<R: Rng>(rng: &mut R) -> Self {
+    fn rand(rng: &mut FastRng) -> Self {
         let mut result = Self::empty();
 
         // 1. Position
         for square in Square::iter() {
-            if rng.gen() {
+            if rng.rand_bool() {
                 result.set_piece_unchecked(square, Piece::rand(rng));
             }
         }
 
         // 2. Side to move
-        if rng.gen() { result.side_to_move = Black }
+        if rng.rand_bool() { result.side_to_move = Black }
 
         // 3. Castling rights
-        if rng.gen() { result.castling_rights.allow(BlackKingSide) }
-        if rng.gen() { result.castling_rights.allow(BlackQueenSide) }
-        if rng.gen() { result.castling_rights.allow(WhiteKingSide) }
-        if rng.gen() { result.castling_rights.allow(WhiteQueenSide) }
+        if rng.rand_bool() { result.castling_rights.allow(BlackKingSide) }
+        if rng.rand_bool() { result.castling_rights.allow(BlackQueenSide) }
+        if rng.rand_bool() { result.castling_rights.allow(WhiteKingSide) }
+        if rng.rand_bool() { result.castling_rights.allow(WhiteQueenSide) }
 
         // 4. En passant target square
-        if rng.gen() {
+        if rng.rand_bool() {
             result.en_passant_file = File::rand(rng);
         }
 
         // 5. Halfmove clock
-        result.halfmove_clock = rng.gen_range(0..MAX_HALFMOVE_CLOCK);
+        result.halfmove_clock = rng.rand_range_u16(0, MAX_HALFMOVE_CLOCK);
 
         // 6. Fullmove counter
         // NOTE: isn't needed
@@ -322,9 +320,6 @@ impl Board {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use rand::SeedableRng;
-    use rand_xorshift::XorShiftRng;
 
     type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
 
@@ -502,7 +497,7 @@ mod tests {
 
     #[test]
     fn rand() {
-        let mut rng = XorShiftRng::from_entropy();
+        let mut rng = FastRng::from_system_time();
 
         let mut buffer1 = FenBuffer::new();
         let board1 = Board::rand(&mut rng);
@@ -518,16 +513,17 @@ mod tests {
         assert_ne!(buffer1.as_slice(), buffer2.as_slice());
     }
 
-    // NOTE: This test is really slow and should be run rarely
+    // NOTE: This is fuzz test.
+    //       it's kinda slow (depends on FUZZ_MULTIPLIER)
+    //       and it's running with high iteration count
+    //       on CI
     #[test]
-    #[ignore]
     fn fuzz_fen() {
-        // PERF: use own RNG
-        let mut rng = XorShiftRng::from_entropy();
+        let mut rng = FastRng::from_system_time();
         let mut buffer = FenBuffer::new();
         let mut next_buffer = FenBuffer::new();
 
-        for _ in 0..(72_993 * FUZZ_MULTIPLIER) {
+        for i in 0..(11_010 * FUZZ_MULTIPLIER) {
             let board = Board::rand(&mut rng);
             buffer.reset();
             board.fen(&mut buffer);

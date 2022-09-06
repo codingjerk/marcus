@@ -22,6 +22,7 @@ mod color;
 mod hint;
 mod piece;
 mod prelude;
+mod rand;
 mod settings;
 mod square;
 mod util;

@@ -1,5 +1,3 @@
-use rand::Rng;
-
 use crate::prelude::*;
 
 pub type SquareInner = u8; // PERF: try smaller and bigger types
@@ -58,8 +56,8 @@ impl Square {
         (file, rank)
     }
 
-    pub fn rand<R: Rng>(rng: &mut R) -> Self {
-        Self::from_index(rng.gen_range(0..64))
+    pub fn rand(rng: &mut FastRng) -> Self {
+        Self::from_index(rng.rand_range_u8(0, 64))
     }
 
     pub fn move_right_unchecked(&mut self, by: SquareInner) {
@@ -168,8 +166,8 @@ impl File {
         FileIterator(FileA)
     }
 
-    pub fn rand<R: Rng>(rng: &mut R) -> Self {
-        Self::from_index(rng.gen_range(0..8))
+    pub fn rand(rng: &mut FastRng) -> Self {
+        Self::from_index(rng.rand_range_u8(0, 8))
     }
 
     // TODO: move en passant possibility to separate board field and
