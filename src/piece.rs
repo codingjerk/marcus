@@ -124,18 +124,18 @@ impl Piece {
             let mut xs = [0; _];
 
             xs[BlackPawn.index() as usize] = b'p';
-            xs[BlackKnight.index() as usize] = b'k';
+            xs[BlackKnight.index() as usize] = b'n';
             xs[BlackBishop.index() as usize] = b'b';
             xs[BlackRook.index() as usize] = b'r';
             xs[BlackQueen.index() as usize] = b'q';
             xs[BlackKing.index() as usize] = b'k';
 
-            xs[WhitePawn.index() as usize] = b'p';
-            xs[WhiteKnight.index() as usize] = b'k';
-            xs[WhiteBishop.index() as usize] = b'b';
-            xs[WhiteRook.index() as usize] = b'r';
-            xs[WhiteQueen.index() as usize] = b'q';
-            xs[WhiteKing.index() as usize] = b'k';
+            xs[WhitePawn.index() as usize] = b'P';
+            xs[WhiteKnight.index() as usize] = b'N';
+            xs[WhiteBishop.index() as usize] = b'B';
+            xs[WhiteRook.index() as usize] = b'R';
+            xs[WhiteQueen.index() as usize] = b'Q';
+            xs[WhiteKing.index() as usize] = b'K';
 
             xs
         };
