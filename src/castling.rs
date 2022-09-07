@@ -21,6 +21,16 @@ impl CastlingRights {
         Self(index)
     }
 
+    // TODO: use direction instead of different constructors
+    // PERF: make it simple shl by color (by wbwb layout)
+    pub const fn king_side(side_to_move: Color) -> Self {
+        match side_to_move {
+            Black => BlackKingSide,
+            White => WhiteKingSide,
+            _ => unsafe { unreachable() },
+        }
+    }
+
     pub const fn index(self) -> CastlingRightsInner {
         self.0
     }
@@ -79,6 +89,16 @@ impl CastlingRights {
         if self.is_allowed(BlackQueenSide) {
             buffer.add(b'q');
         }
+    }
+
+    pub const fn king_destination(self) -> Square {
+        // TODO: use separate structures for single castling and
+        //       castling "map"
+        match self {
+            BlackQueenSide => ,
+            BlackKingSide: CastlingRights  = CastlingRights(0b0010);
+            WhiteQueenSide: CastlingRights = CastlingRights(0b0100);
+            WhiteKingSide: CastlingRights  = CastlingRights(0b1000);
     }
 }
 

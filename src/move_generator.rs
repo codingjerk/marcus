@@ -322,19 +322,26 @@ impl MoveGenerator {
         }
 
         // King side castle
-        // if board.castling_rights().is_allowed(CastlingRights::king_side(stm))
-        // check rook, check right, generate
         let stm = board.side_to_move();
-        let cr = CastlingRights::king_side(stm);
-
         if from != Square::king_initial(stm) {
             return;
         }
 
-        let to = 
+        let cr = CastlingRights::king_side(stm);
+        if !board.castling_rights().is_allowed(cr) {
+            return;
+        }
 
-        if board.piece(to
-        buffer.add(Move::king_side_castle(from, to);
+        let to = cr.king_destination();
+        unsafe { always(board.piece(to) == PieceNone) }
+
+        let rook_from = cr.rook_initial();
+        unsafe { always(board.piece(rook_from) == Piece::new(stm, Rook)) }
+
+        let rook_to = cr.rook_destination();
+        unsafe { always(board.piece(rook_to) == PieceNone) }
+
+        buffer.add(Move::king_side_castle(from, to));
     }
 }
 

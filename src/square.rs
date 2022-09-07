@@ -99,8 +99,12 @@ impl Square {
 
     // Moves black pieces toward rank 1
     // And white pieces toward rank 8
-    pub const fn forward(self, color: Color, by: SquareInner) -> Self {
-        match color {
+    pub const fn forward(
+        self,
+        side_to_move: Color,
+        by: SquareInner,
+    ) -> Self {
+        match side_to_move {
             Black => self.down(by),
             White => self.up(by),
             _ => unsafe { unreachable() },
@@ -126,6 +130,14 @@ impl Square {
         let en_passant_rank = Rank::en_passant(side_to_move);
 
         Self::from_file_rank(en_passant_file, en_passant_rank)
+    }
+
+    pub const fn king_initial(side_to_move: Color) -> Self {
+        match side_to_move {
+            Black => e8,
+            White => e1,
+            _ => unsafe { unreachable() },
+        }
     }
 }
 
