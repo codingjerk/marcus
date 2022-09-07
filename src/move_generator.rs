@@ -51,6 +51,7 @@ impl MoveGenerator {
         self.generate_silents_for_pawn(from, board, buffer);
         self.generate_capture_for_pawn(from,  1, board, buffer);
         self.generate_capture_for_pawn(from, -1, board, buffer);
+        self.generate_promotions_for_pawn(from, board, buffer);
     }
 
     fn generate_silents_for_pawn(
@@ -60,6 +61,9 @@ impl MoveGenerator {
         buffer: &mut MoveBuffer,
     ) {
         let stm = board.side_to_move();
+        if from.rank() == Rank::pawn_pre_promotion_rank(stm) {
+            return;
+        }
 
         let to = from.forward(stm, 1);
         if board.piece(to) != PieceNone { return }
@@ -80,6 +84,10 @@ impl MoveGenerator {
         buffer: &mut MoveBuffer,
     ) {
         let stm = board.side_to_move();
+        if from.rank() == Rank::pawn_pre_promotion_rank(stm) {
+            return;
+        }
+
         let to = if let Some(to) = from.forward(stm, 1).by(direction, 0) {
             to
         } else {
@@ -101,6 +109,26 @@ impl MoveGenerator {
         if ep_to == to {
             buffer.add(Move::en_passant(from, to));
         }
+    }
+
+    fn generate_promotions_for_pawn(
+        &self,
+        from: Square,
+        board: &Board,
+        buffer: &mut MoveBuffer,
+    ) {
+        let stm = board.side_to_move();
+        if from.rank() != Rank::pawn_pre_promotion_rank(stm) {
+            return;
+        }
+
+        let to = from.forward(stm, 1);
+        if board.piece(to) != PieceNone { return }
+
+        buffer.add(Move::promotion(from, to, Knight));
+        buffer.add(Move::promotion(from, to, Bishop));
+        buffer.add(Move::promotion(from, to, Rook));
+        buffer.add(Move::promotion(from, to, Queen));
     }
 
     fn generate_for_knight(
@@ -354,12 +382,24 @@ mod tests {
         assert!(buffer.contains(Move::en_passant(e5, f6)));
         assert!(buffer.contains(Move::en_passant(g5, f6)));
 
-        println!("{:?}", buffer.as_slice());
+        assert_eq!(buffer.len(), 4);
+    }
+
+    #[test]
+    fn pawn_promotions() {
+        let board = Board::from_fen(b"8/3P4/8/8/8/8/8/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert!(buffer.contains(Move::promotion(d7, d8, Knight)));
+        assert!(buffer.contains(Move::promotion(d7, d8, Bishop)));
+        assert!(buffer.contains(Move::promotion(d7, d8, Rook)));
+        assert!(buffer.contains(Move::promotion(d7, d8, Queen)));
 
         assert_eq!(buffer.len(), 4);
     }
 
-    // fn pawn_promotions() {
     // fn pawn_promotion_captures() {
     // fn black_pawns() {
 

@@ -5,10 +5,16 @@ use crate::prelude::*;
 pub type MoveInner = u32; // PERF: try smaller and bigger types
 
 // Bit structure:
-// - - - - - - - - - - - - -
-//   ^   [  from ] [  to   ]
-//   | - captured piece
+// - - - - - - - - - - - - - - - -
+// \___/ \___/ [  from ] [  to   ]
+//   ^     ^
+//   |     | - captured piece
+//   |
+//   | - promoted piece
 // Total bits: 5 + 5 + 3 = 13
+// PERF: promoted piece could be encoded in special
+//       bits to save space cause it's impossible
+//       to promote to king or pawn
 #[derive(Copy, Clone, PartialEq)]
 pub struct Move(MoveInner);
 
@@ -16,7 +22,12 @@ impl Move {
     pub const Mask: MoveInner = 0b111111111111111;
 
     // PERF: try to store Piece instead of Dignity
-    pub const fn new(from: Square, to: Square, captured: Dignity) -> Self {
+    pub const fn new(
+        from: Square,
+        to: Square,
+        captured: Dignity,
+        promoted: Dignity,
+    ) -> Self {
         let bits =
             (from.index() as MoveInner)
             ^ ((to.index() as MoveInner) << 6)
@@ -29,23 +40,27 @@ impl Move {
     }
 
     pub const fn capture(from: Square, to: Square, captured: Dignity) -> Self {
-        Self::new(from, to, captured)
+        Self::new(from, to, captured, DignityNone)
     }
 
     pub const fn quiet(from: Square, to: Square) -> Self {
-        Self::new(from, to, DignityNone)
+        Self::new(from, to, DignityNone, DignityNone)
     }
 
     pub const fn pawn_single(from: Square, to: Square) -> Self {
-        Self::new(from, to, DignityNone)
+        Self::new(from, to, DignityNone, DignityNone)
     }
 
     pub const fn pawn_double(from: Square, to: Square) -> Self {
-        Self::new(from, to, DignityNone)
+        Self::new(from, to, DignityNone, DignityNone)
     }
 
     pub const fn en_passant(from: Square, to: Square) -> Self {
-        Self::new(from, to, Pawn)
+        Self::new(from, to, Pawn, DignityNone)
+    }
+
+    pub const fn promotion(from: Square, to: Square, promoted: Dignity) -> Self {
+        Self::new(from, to, DignityNone, promoted)
     }
 
     pub const fn from(self) -> Square {

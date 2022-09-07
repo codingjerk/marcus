@@ -312,6 +312,14 @@ impl Rank {
         }
     }
 
+    pub const fn pawn_pre_promotion_rank(side_to_move: Color) -> Self {
+        match side_to_move {
+            Black => Rank2,
+            White => Rank7,
+            _ => unsafe { unreachable() },
+        }
+    }
+
     pub const fn en_passant(side_to_move: Color) -> Self {
         match side_to_move {
             Black => Rank3,
