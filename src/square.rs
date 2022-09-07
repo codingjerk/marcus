@@ -54,6 +54,14 @@ impl Square {
         self.0 / 8
     }
 
+    pub const fn file(self) -> File {
+        File::from_index(self.x())
+    }
+
+    pub const fn rank(self) -> Rank {
+        Rank::from_index(self.y() * 8)
+    }
+
     #[inline]
     pub const fn fen(self) -> (u8, u8) {
         let file = b'a' + self.x();
@@ -274,12 +282,29 @@ pub struct Rank(SquareInner);
 impl Rank {
     pub const Mask: SquareInner = 0b111000;
 
+    pub const fn from_index(index: SquareInner) -> Self {
+        unsafe {
+            always(index % 8 == 0);
+            always(index <= 56);
+        }
+
+        Self(index)
+    }
+
     pub const fn top_to_bottom() -> RevRankIterator {
         RevRankIterator(Rank8)
     }
 
-    pub const fn en_passant(color: Color) -> Self {
-        match color {
+    pub const fn pawn_double_rank(side_to_move: Color) -> Self {
+        match side_to_move {
+            Black => Rank7,
+            White => Rank2,
+            _ => unsafe { unreachable() },
+        }
+    }
+
+    pub const fn en_passant(side_to_move: Color) -> Self {
+        match side_to_move {
             Black => Rank3,
             White => Rank6,
             _ => unsafe { unreachable() },
@@ -291,14 +316,14 @@ impl Rank {
     }
 }
 
-pub const Rank1: Rank = Rank(0);
-pub const Rank2: Rank = Rank(8);
-pub const Rank3: Rank = Rank(16);
-pub const Rank4: Rank = Rank(24);
-pub const Rank5: Rank = Rank(32);
-pub const Rank6: Rank = Rank(40);
-pub const Rank7: Rank = Rank(48);
-pub const Rank8: Rank = Rank(56);
+pub const Rank1: Rank = Rank::from_index(0);
+pub const Rank2: Rank = Rank::from_index(8);
+pub const Rank3: Rank = Rank::from_index(16);
+pub const Rank4: Rank = Rank::from_index(24);
+pub const Rank5: Rank = Rank::from_index(32);
+pub const Rank6: Rank = Rank::from_index(40);
+pub const Rank7: Rank = Rank::from_index(48);
+pub const Rank8: Rank = Rank::from_index(56);
 
 pub struct RevRankIterator(Rank);
 

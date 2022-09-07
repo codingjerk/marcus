@@ -54,7 +54,9 @@ impl MoveGenerator {
             buffer.add(Move::pawn_single(from, to));
 
             let to = from.forward(stm, 2);
-            if board.piece(to) == PieceNone {
+            if from.rank() == Rank::pawn_double_rank(stm) &&
+               board.piece(to) == PieceNone
+            {
                 buffer.add(Move::pawn_double(from, to));
             }
         }
@@ -268,6 +270,28 @@ mod tests {
         movegen.generate(&board, &mut buffer);
         assert_eq!(buffer.len(), 0);
     }
+
+    #[test]
+    fn pawn_doubles() {
+        let board = Board::from_fen(b"8/8/5P2/4P3/3P4/2P5/1P6/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert!(buffer.contains(Move::pawn_double(b2, b4)));
+        assert!(buffer.contains(Move::pawn_single(b2, b3)));
+        assert!(buffer.contains(Move::pawn_single(c3, c4)));
+        assert!(buffer.contains(Move::pawn_single(d4, d5)));
+        assert!(buffer.contains(Move::pawn_single(e5, e6)));
+        assert!(buffer.contains(Move::pawn_single(f6, f7)));
+
+        assert_eq!(buffer.len(), 6);
+    }
+
+    // fn pawn_captures() {
+    // fn pawn_promotions() {
+    // fn pawn_en_passant() {
+    // fn black_pawns() {
 
     #[test]
     fn knights() {
