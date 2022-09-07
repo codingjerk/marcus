@@ -63,6 +63,15 @@ impl Move {
         Self::new(from, to, DignityNone, promoted)
     }
 
+    pub const fn promotion_capture(
+        from: Square,
+        to: Square,
+        captured: Dignity,
+        promoted: Dignity,
+    ) -> Self {
+        Self::new(from, to, captured, promoted)
+    }
+
     pub const fn from(self) -> Square {
         let index = (self.0 as SquareInner) & Square::Mask;
 

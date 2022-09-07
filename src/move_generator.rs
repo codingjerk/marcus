@@ -52,6 +52,8 @@ impl MoveGenerator {
         self.generate_capture_for_pawn(from,  1, board, buffer);
         self.generate_capture_for_pawn(from, -1, board, buffer);
         self.generate_promotions_for_pawn(from, board, buffer);
+        self.generate_promotion_captures_for_pawn(from,  1, board, buffer);
+        self.generate_promotion_captures_for_pawn(from, -1, board, buffer);
     }
 
     fn generate_silents_for_pawn(
@@ -129,6 +131,35 @@ impl MoveGenerator {
         buffer.add(Move::promotion(from, to, Bishop));
         buffer.add(Move::promotion(from, to, Rook));
         buffer.add(Move::promotion(from, to, Queen));
+    }
+
+    fn generate_promotion_captures_for_pawn(
+        &self,
+        from: Square,
+        direction: i8,
+        board: &Board,
+        buffer: &mut MoveBuffer,
+    ) {
+        let stm = board.side_to_move();
+        if from.rank() != Rank::pawn_pre_promotion_rank(stm) {
+            return;
+        }
+
+        let to = if let Some(to) = from.forward(stm, 1).by(direction, 0) {
+            to
+        } else {
+            return;
+        };
+
+        let dest = board.piece(to);
+        if dest == PieceNone || dest.color() == stm {
+            return;
+        }
+
+        buffer.add(Move::promotion_capture(from, to, dest.dignity(), Knight));
+        buffer.add(Move::promotion_capture(from, to, dest.dignity(), Bishop));
+        buffer.add(Move::promotion_capture(from, to, dest.dignity(), Rook));
+        buffer.add(Move::promotion_capture(from, to, dest.dignity(), Queen));
     }
 
     fn generate_for_knight(
@@ -400,7 +431,27 @@ mod tests {
         assert_eq!(buffer.len(), 4);
     }
 
-    // fn pawn_promotion_captures() {
+    #[test]
+    fn pawn_promotion_captures() {
+        let board = Board::from_fen(b"2nkn3/3P4/8/8/8/8/8/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+
+        assert!(buffer.contains(Move::promotion_capture(d7, c8, Knight, Knight)));
+        assert!(buffer.contains(Move::promotion_capture(d7, c8, Knight, Bishop)));
+        assert!(buffer.contains(Move::promotion_capture(d7, c8, Knight, Rook)));
+        assert!(buffer.contains(Move::promotion_capture(d7, c8, Knight, Queen)));
+
+        assert!(buffer.contains(Move::promotion_capture(d7, e8, Knight, Knight)));
+        assert!(buffer.contains(Move::promotion_capture(d7, e8, Knight, Bishop)));
+        assert!(buffer.contains(Move::promotion_capture(d7, e8, Knight, Rook)));
+        assert!(buffer.contains(Move::promotion_capture(d7, e8, Knight, Queen)));
+
+        assert_eq!(buffer.len(), 8);
+    }
+
     // fn black_pawns() {
 
     #[test]
