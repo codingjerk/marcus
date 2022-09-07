@@ -30,7 +30,11 @@ impl MoveGenerator {
                 p if p == Bishop => Self::generate_for_bishop,
                 p if p == Rook => Self::generate_for_rook,
                 p if p == Queen => Self::generate_for_queen,
-                _ => continue,
+                p if p == King => Self::generate_for_king,
+
+                p if p == DignityNone => continue,
+
+                _ => unsafe { unreachable() },
             };
 
             piece_gen(self, square, board, buffer);
@@ -171,6 +175,39 @@ impl MoveGenerator {
                     }
                     break;
                 }
+            }
+        }
+    }
+
+    fn generate_for_king(
+        &self,
+        from: Square,
+        board: &Board,
+        buffer: &mut MoveBuffer,
+    ) {
+        for (dx, dy) in [
+            (-1, -1),
+            (-1,  0),
+            (-1,  1),
+            ( 0, -1),
+            ( 0,  1),
+            ( 1, -1),
+            ( 1,  0),
+            ( 1,  1),
+        ] {
+            let to = match from.by(dx, dy) {
+                Some(s) => s,
+                None => continue,
+            };
+
+            let dest = board.piece(to);
+            if dest == PieceNone {
+                buffer.add(Move::quiet(from, to));
+            } else {
+                if dest.color() != board.side_to_move() {
+                    buffer.add(Move::capture(from, to, dest.dignity()));
+                }
+                break;
             }
         }
     }
@@ -316,5 +353,25 @@ mod tests {
         assert!(buffer.contains(Move::capture(d4, a7, Knight)));
 
         assert_eq!(buffer.len(), 15);
+    }
+
+    #[test]
+    fn king() {
+        let board = Board::from_fen(b"8/8/8/8/5n2/4K3/8/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+
+        assert!(buffer.contains(Move::quiet(e3, f3)));
+        assert!(buffer.contains(Move::quiet(e3, f2)));
+        assert!(buffer.contains(Move::quiet(e3, e2)));
+        assert!(buffer.contains(Move::quiet(e3, d2)));
+        assert!(buffer.contains(Move::quiet(e3, d3)));
+        assert!(buffer.contains(Move::quiet(e3, d4)));
+        assert!(buffer.contains(Move::quiet(e3, e4)));
+        assert!(buffer.contains(Move::capture(e3, f4, Knight)));
+
+        assert_eq!(buffer.len(), 8);
     }
 }
