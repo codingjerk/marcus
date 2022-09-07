@@ -13,6 +13,7 @@ impl MoveGenerator {
         Self
     }
 
+    // PERF: try to pass color as template parameter
     pub fn generate(
         &self,
         board: &Board,
@@ -47,9 +48,16 @@ impl MoveGenerator {
         board: &Board,
         buffer: &mut MoveBuffer,
     ) {
-        let c = board.side_to_move();
-        buffer.add(Move::pawn_single(from, from.forward(c, 1)));
-        buffer.add(Move::pawn_double(from, from.forward(c, 2)));
+        let stm = board.side_to_move();
+        let to = from.forward(stm, 1);
+        if board.piece(to) == PieceNone {
+            buffer.add(Move::pawn_single(from, to));
+
+            let to = from.forward(stm, 2);
+            if board.piece(to) == PieceNone {
+                buffer.add(Move::pawn_double(from, to));
+            }
+        }
     }
 
     fn generate_for_knight(
@@ -252,6 +260,16 @@ mod tests {
     }
 
     #[test]
+    fn pawn_blocks() {
+        let board = Board::from_fen(b"8/4p3/3pPp2/p1pP1Pp1/PpP3P1/1P5p/7P/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert_eq!(buffer.len(), 0);
+    }
+
+    #[test]
     fn knights() {
         let board = Board::from_fen(b"8/8/4p3/8/1p1N4/1P6/8/8 w - - 0 1");
         let movegen = MoveGenerator::new();
@@ -266,8 +284,6 @@ mod tests {
         assert!(buffer.contains(Move::quiet(d4, b5)));
         assert!(buffer.contains(Move::quiet(d4, c6)));
         assert!(buffer.contains(Move::capture(d4, e6, Pawn)));
-
-        println!("{:?}", buffer.as_slice());
 
         assert_eq!(buffer.len(), 7);
     }

@@ -8,6 +8,8 @@ const MAX_FEN_SIZE: usize = 90;
 // TODO: move to board/mailbox8x8
 #[derive(Debug, PartialEq)]
 pub struct Board {
+    // PERF: try two arrays for dignities instead
+    //       try to remove it from bitboard representation
     squares: [Piece; 64],
 
     // PERF: try to merge flags

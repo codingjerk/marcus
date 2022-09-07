@@ -73,6 +73,9 @@ impl fmt::Debug for Move {
         let (tf, tr) = self.to().fen();
         let bytes = [ff, fr, tf, tr];
 
+        // TODO: output promotion piece
+        // TODO: create uci() function with same behavior
+        //       and use it here
         write!(f, "{}", unsafe {
             std::str::from_utf8_unchecked(&bytes)
         })
