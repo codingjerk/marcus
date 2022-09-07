@@ -11,7 +11,7 @@ pub type MoveInner = u32; // PERF: try smaller and bigger types
 //   |     | - captured piece
 //   |
 //   | - promoted piece
-// Total bits: 5 + 5 + 3 = 13
+// Total bits: 3 + 3 + 5 + 5 = 16
 // PERF: promoted piece could be encoded in special
 //       bits to save space cause it's impossible
 //       to promote to king or pawn
@@ -70,6 +70,18 @@ impl Move {
         promoted: Dignity,
     ) -> Self {
         Self::new(from, to, captured, promoted)
+    }
+
+    pub fn king_side_castle(
+        from: Square,
+        to: Square,
+    ) -> Self {
+        unsafe {
+            always(from.file() == FileE);
+            always(to.file() == FileG);
+        }
+
+        Self::new(from, to, DignityNone, DignityNone)
     }
 
     pub const fn from(self) -> Square {

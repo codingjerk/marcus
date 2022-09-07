@@ -320,6 +320,21 @@ impl MoveGenerator {
                 buffer.add(Move::capture(from, to, dest.dignity()));
             }
         }
+
+        // King side castle
+        // if board.castling_rights().is_allowed(CastlingRights::king_side(stm))
+        // check rook, check right, generate
+        let stm = board.side_to_move();
+        let cr = CastlingRights::king_side(stm);
+
+        if from != Square::king_initial(stm) {
+            return;
+        }
+
+        let to = 
+
+        if board.piece(to
+        buffer.add(Move::king_side_castle(from, to);
     }
 }
 
@@ -452,7 +467,41 @@ mod tests {
         assert_eq!(buffer.len(), 8);
     }
 
-    // fn black_pawns() {
+    #[test]
+    #[ignore]
+    fn black_pawns() {
+        let board = Board::from_fen(b"TODO");
+    }
+
+    #[test]
+    fn king_side_castle() {
+        let board = Board::from_fen(b"8/8/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert!(buffer.contains(Move::quiet(e1, f1)));
+        assert!(buffer.contains(Move::king_side_castle(e1, g1)));
+        assert_eq!(buffer.len(), 2);
+
+        let board = Board::from_fen(b"8/8/8/8/8/8/PPPPPPPP/RNBQK2R w Qkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert!(buffer.contains(Move::quiet(e1, f1)));
+        assert_eq!(buffer.len(), 1);
+
+        let board = Board::from_fen(b"8/8/8/8/8/8/PPPPPPPP/RNBQK3 w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert!(buffer.contains(Move::quiet(e1, f1)));
+        assert_eq!(buffer.len(), 1);
+    }
+
+    // fn queen_side_castle()
 
     #[test]
     fn knights() {
