@@ -48,39 +48,59 @@ impl MoveGenerator {
         board: &Board,
         buffer: &mut MoveBuffer,
     ) {
+        self.generate_silents_for_pawn(from, board, buffer);
+        self.generate_capture_for_pawn(from,  1, board, buffer);
+        self.generate_capture_for_pawn(from, -1, board, buffer);
+    }
+
+    fn generate_silents_for_pawn(
+        &self,
+        from: Square,
+        board: &Board,
+        buffer: &mut MoveBuffer,
+    ) {
         let stm = board.side_to_move();
 
-        // Silent moves
         let to = from.forward(stm, 1);
-        if board.piece(to) == PieceNone {
-            buffer.add(Move::pawn_single(from, to));
+        if board.piece(to) != PieceNone { return }
+        buffer.add(Move::pawn_single(from, to));
 
-            let to = from.forward(stm, 2);
-            if from.rank() == Rank::pawn_double_rank(stm) &&
-               board.piece(to) == PieceNone
-            {
-                buffer.add(Move::pawn_double(from, to));
-            }
+        let to = from.forward(stm, 2);
+        if board.piece(to) != PieceNone { return }
+        if from.rank() != Rank::pawn_double_rank(stm) { return }
+
+        buffer.add(Move::pawn_double(from, to));
+    }
+
+    fn generate_capture_for_pawn(
+        &self,
+        from: Square,
+        direction: i8,
+        board: &Board,
+        buffer: &mut MoveBuffer,
+    ) {
+        let stm = board.side_to_move();
+        let to = if let Some(to) = from.forward(stm, 1).by(direction, 0) {
+            to
+        } else {
+            return;
+        };
+
+        let dest = board.piece(to);
+        if dest != PieceNone && dest.color() != stm {
+            buffer.add(Move::capture(from, to, dest.dignity()));
         }
 
-        // Captures
-        if let Some(to) = from.forward(stm, 1).by(-1, 0) {
-            let dest = board.piece(to);
-            if dest != PieceNone &&
-               dest.color() != stm
-            {
-                buffer.add(Move::capture(from, to, dest.dignity()));
-            }
-        };
+        if board.en_passant_file() == FileEnPassantNone {
+            return;
+        }
 
-        if let Some(to) = from.forward(stm, 1).by(1, 0) {
-            let dest = board.piece(to);
-            if dest != PieceNone &&
-               dest.color() != stm
-            {
-                buffer.add(Move::capture(from, to, dest.dignity()));
-            }
-        };
+        let ep_to = Square::en_passant(stm, board.en_passant_file());
+        unsafe { always(board.piece(ep_to) == PieceNone) }
+
+        if ep_to == to {
+            buffer.add(Move::en_passant(from, to));
+        }
     }
 
     fn generate_for_knight(
@@ -309,6 +329,7 @@ mod tests {
         assert_eq!(buffer.len(), 6);
     }
 
+    #[test]
     fn pawn_captures() {
         let board = Board::from_fen(b"8/8/8/2ppp3/3P4/8/8/8 w - - 0 1");
         let movegen = MoveGenerator::new();
@@ -321,7 +342,23 @@ mod tests {
         assert_eq!(buffer.len(), 2);
     }
 
-    // fn pawn_en_passant() {
+    #[test]
+    fn pawn_en_passant() {
+        let board = Board::from_fen(b"8/8/8/4PpP1/8/8/8/8 w - f6 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+        assert!(buffer.contains(Move::quiet(e5, e6)));
+        assert!(buffer.contains(Move::quiet(g5, g6)));
+        assert!(buffer.contains(Move::en_passant(e5, f6)));
+        assert!(buffer.contains(Move::en_passant(g5, f6)));
+
+        println!("{:?}", buffer.as_slice());
+
+        assert_eq!(buffer.len(), 4);
+    }
+
     // fn pawn_promotions() {
     // fn pawn_promotion_captures() {
     // fn black_pawns() {

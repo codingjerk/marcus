@@ -44,6 +44,10 @@ impl Move {
         Self::new(from, to, DignityNone)
     }
 
+    pub const fn en_passant(from: Square, to: Square) -> Self {
+        Self::new(from, to, Pawn)
+    }
+
     pub const fn from(self) -> Square {
         let index = (self.0 as SquareInner) & Square::Mask;
 
