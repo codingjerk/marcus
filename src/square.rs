@@ -23,6 +23,10 @@ impl Square {
         Self::from_index(file.0 ^ rank.0)
     }
 
+    pub const fn from_x_y(x: u8, y: u8) -> Self {
+        Self::from_index(x ^ (y * 8))
+    }
+
     pub const fn from_fen(file: u8, rank: u8) -> Self {
         unsafe {
             always(b'a' <= file && file <= b'h');
@@ -42,10 +46,18 @@ impl Square {
         SquareIterator(a1)
     }
 
+    pub const fn x(self) -> u8 {
+        self.0 % 8
+    }
+
+    pub const fn y(self) -> u8 {
+        self.0 / 8
+    }
+
     #[inline]
     pub const fn fen(self) -> (u8, u8) {
-        let file = b'a' + (self.0 % 8);
-        let rank = b'1' + (self.0 / 8);
+        let file = b'a' + self.x();
+        let rank = b'1' + self.y();
 
         unsafe {
             always(b'a' <= file && file <= b'h');
@@ -57,6 +69,34 @@ impl Square {
 
     pub fn rand(rng: &mut FastRng) -> Self {
         Self::from_index(rng.rand_range_u8(0, 64))
+    }
+
+    pub const fn up(self, by: SquareInner) -> Self {
+        Self::from_index(self.index() + by * 8)
+    }
+
+    pub const fn down(self, by: SquareInner) -> Self {
+        Self::from_index(self.index() - by * 8)
+    }
+
+    pub const fn by(self, dx: i8, dy: i8) -> Option<Self> {
+        let x = self.x() as i8 + dx;
+        let y = self.y() as i8 + dy;
+
+        if x < 0 || x >= 8 { return None }
+        if y < 0 || y >= 8 { return None }
+
+        Some(Self::from_x_y(x as u8, y as u8))
+    }
+
+    // Moves black pieces toward rank 1
+    // And white pieces toward rank 8
+    pub fn forward(self, color: Color, by: SquareInner) -> Self {
+        match color {
+            Black => self.down(by),
+            White => self.up(by),
+            _ => unsafe { unreachable() },
+        }
     }
 
     pub fn move_right_unchecked(&mut self, by: SquareInner) {
@@ -115,6 +155,24 @@ pub const e3: Square = Square(20);
 pub const f3: Square = Square(21);
 pub const g3: Square = Square(22);
 pub const h3: Square = Square(23);
+
+pub const a4: Square = Square(24);
+pub const b4: Square = Square(25);
+pub const c4: Square = Square(26);
+pub const d4: Square = Square(27);
+pub const e4: Square = Square(28);
+pub const f4: Square = Square(29);
+pub const g4: Square = Square(30);
+pub const h4: Square = Square(31);
+
+pub const a5: Square = Square(32);
+pub const b5: Square = Square(33);
+pub const c5: Square = Square(34);
+pub const d5: Square = Square(35);
+pub const e5: Square = Square(36);
+pub const f5: Square = Square(37);
+pub const g5: Square = Square(38);
+pub const h5: Square = Square(39);
 
 pub const a6: Square = Square(40);
 pub const b6: Square = Square(41);

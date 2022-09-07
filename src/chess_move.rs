@@ -34,6 +34,10 @@ impl Move {
         Self::new(from, to, DignityNone)
     }
 
+    pub const fn pawn_single(from: Square, to: Square) -> Self {
+        Self::new(from, to, DignityNone)
+    }
+
     pub const fn pawn_double(from: Square, to: Square) -> Self {
         Self::new(from, to, DignityNone)
     }

@@ -4,3 +4,4 @@ use std::mem::MaybeUninit;
 pub unsafe fn undefined<T>() -> T {
     MaybeUninit::uninit().assume_init()
 }
+
