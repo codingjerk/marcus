@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::prelude::*;
 
 pub type MoveInner = u32; // PERF: try smaller and bigger types
@@ -7,7 +9,7 @@ pub type MoveInner = u32; // PERF: try smaller and bigger types
 //   ^   [  from ] [  to   ]
 //   | - captured piece
 // Total bits: 5 + 5 + 3 = 13
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Move(MoveInner);
 
 impl Move {
@@ -62,6 +64,18 @@ impl Move {
 
     pub const fn index(self) -> MoveInner {
         self.0
+    }
+}
+
+impl fmt::Debug for Move {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (ff, fr) = self.from().fen();
+        let (tf, tr) = self.to().fen();
+        let bytes = [ff, fr, tf, tr];
+
+        write!(f, "{}", unsafe {
+            std::str::from_utf8_unchecked(&bytes)
+        })
     }
 }
 

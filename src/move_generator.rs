@@ -73,8 +73,11 @@ impl MoveGenerator {
                 None => continue,
             };
 
-            if board.piece(to) == PieceNone {
+            let dest = board.piece(to);
+            if dest == PieceNone {
                 buffer.add(Move::quiet(from, to));
+            } else if dest.color() != board.side_to_move() {
+                buffer.add(Move::capture(from, to, dest.dignity()));
             }
         }
     }
@@ -203,11 +206,8 @@ impl MoveGenerator {
             let dest = board.piece(to);
             if dest == PieceNone {
                 buffer.add(Move::quiet(from, to));
-            } else {
-                if dest.color() != board.side_to_move() {
-                    buffer.add(Move::capture(from, to, dest.dignity()));
-                }
-                break;
+            } else if dest.color() != board.side_to_move() {
+                buffer.add(Move::capture(from, to, dest.dignity()));
             }
         }
     }
@@ -249,6 +249,27 @@ mod tests {
         assert!(buffer.contains(Move::quiet(g1, h3)));
 
         assert_eq!(buffer.len(), 20);
+    }
+
+    #[test]
+    fn knights() {
+        let board = Board::from_fen(b"8/8/4p3/8/1p1N4/1P6/8/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        movegen.generate(&board, &mut buffer);
+
+        assert!(buffer.contains(Move::quiet(d4, f5)));
+        assert!(buffer.contains(Move::quiet(d4, f3)));
+        assert!(buffer.contains(Move::quiet(d4, e2)));
+        assert!(buffer.contains(Move::quiet(d4, c2)));
+        assert!(buffer.contains(Move::quiet(d4, b5)));
+        assert!(buffer.contains(Move::quiet(d4, c6)));
+        assert!(buffer.contains(Move::capture(d4, e6, Pawn)));
+
+        println!("{:?}", buffer.as_slice());
+
+        assert_eq!(buffer.len(), 7);
     }
 
     #[test]
