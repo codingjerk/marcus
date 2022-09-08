@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::prelude::*;
 
 pub type SquareInner = u8; // PERF: try smaller and bigger types
@@ -7,7 +9,7 @@ pub type SquareInner = u8; // PERF: try smaller and bigger types
 // \___/ \___/ <- file
 //   | - rank
 // Total bits: 3 + 3 = 6
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Square(SquareInner);
 
 impl Square {
@@ -138,6 +140,14 @@ impl Square {
             White => e1,
             _ => unsafe { unreachable() },
         }
+    }
+}
+
+impl fmt::Debug for Square {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (file, rank) = self.fen();
+        write!(f, "{}", char::from(file))?;
+        write!(f, "{}", char::from(rank))
     }
 }
 
