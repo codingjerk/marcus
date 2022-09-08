@@ -317,6 +317,40 @@ impl Board {
 
         self.squares[index] = piece;
     }
+
+    pub fn has_possible_pawn_structure(&self) -> bool {
+        for square in Square::iter() {
+            let piece = self.piece(square);
+
+            if piece.dignity() != Pawn {
+                continue;
+            }
+
+            if square.rank() == Rank1 ||
+               square.rank() == Rank8 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn has_possible_en_passant_square(&self) -> bool {
+        if self.en_passant_file() == FileEnPassantNone {
+            return true;
+        }
+
+        let ep_square = Square::en_passant(
+            self.side_to_move(),
+            self.en_passant_file(),
+        );
+
+        if self.piece(ep_square) != PieceNone {
+            return false;
+        }
+
+        true
+    }
 }
 
 #[cfg(test)]
