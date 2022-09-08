@@ -84,6 +84,18 @@ impl Move {
         Self::new(from, to, DignityNone, DignityNone)
     }
 
+    pub fn queen_side_castle(
+        from: Square,
+        to: Square,
+    ) -> Self {
+        unsafe {
+            always(from.file() == FileE);
+            always(to.file() == FileC);
+        }
+
+        Self::new(from, to, DignityNone, DignityNone)
+    }
+
     pub const fn from(self) -> Square {
         let index = (self.0 as SquareInner) & Square::Mask;
 

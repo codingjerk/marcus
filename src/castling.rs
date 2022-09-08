@@ -31,6 +31,14 @@ impl CastlingRights {
         }
     }
 
+    pub const fn queen_side(side_to_move: Color) -> Self {
+        match side_to_move {
+            Black => BlackQueenSide,
+            White => WhiteQueenSide,
+            _ => unsafe { unreachable() },
+        }
+    }
+
     pub const fn index(self) -> CastlingRightsInner {
         self.0
     }
