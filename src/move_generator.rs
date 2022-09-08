@@ -680,24 +680,16 @@ mod tests {
         let movegen = MoveGenerator::new();
         let mut buffer = MoveBuffer::new();
 
-        let mut fen_buffer = StaticBuffer::new();
         for i in 0..(11_010 * FUZZ_MULTIPLIER) {
             let board = Board::rand(&mut rng);
             buffer.reset();
 
-            unsafe {
-                fen_buffer.reset();
-                if !board.has_possible_pawn_structure() ||
-                   !board.has_possible_en_passant_square()
-                {
-                    continue;
-                }
+            if !board.has_possible_pawn_structure() ||
+               !board.has_possible_en_passant_square()
+            {
+                continue;
+            }
 
-                board.fen(&mut fen_buffer);
-                let s = std::str::from_utf8_unchecked(fen_buffer.as_slice());
-
-                println!("{}", s);
-            };
             movegen.generate(&board, &mut buffer);
         }
     }
