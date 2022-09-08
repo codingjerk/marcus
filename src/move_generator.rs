@@ -42,6 +42,13 @@ impl MoveGenerator {
         }
     }
 
+    pub fn make_move(
+        &self,
+        board: &mut Board,
+        chess_move: Move,
+    ) -> bool {
+    }
+
     fn generate_for_pawn(
         &self,
         from: Square,
@@ -546,10 +553,6 @@ mod tests {
             assert!(!buffer.contains(Move::queen_side_castle(e1, c1)));
         }
     }
-
-    // fn make_move
-    // fn unmake_move
-    // fn perft
 
     #[test]
     fn knights() {
