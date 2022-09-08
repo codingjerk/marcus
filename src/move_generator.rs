@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 // TODO: calculate
-const MAX_MOVE_BUFFER_SIZE: usize = 100;
+const MAX_MOVE_BUFFER_SIZE: usize = 500;
 
 type MoveBuffer = StaticBuffer<Move, MAX_MOVE_BUFFER_SIZE>;
 
@@ -547,7 +547,6 @@ mod tests {
         }
     }
 
-    // fn fuzzing
     // fn make_move
     // fn unmake_move
     // fn perft
