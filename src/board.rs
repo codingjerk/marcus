@@ -278,7 +278,7 @@ impl Board {
 
     // Creates random board, using `rng`
     // NOTE: this board can be invalid chess board
-    fn rand(rng: &mut FastRng) -> Self {
+    pub fn rand(rng: &mut FastRng) -> Self {
         let mut result = Self::empty();
 
         // 1. Position
@@ -513,6 +513,29 @@ mod tests {
         //       get two identical positions,
         //       but it should be **really** rare
         assert_ne!(buffer1.as_slice(), buffer2.as_slice());
+    }
+
+    #[test]
+    fn rand_generates_white_pieces() {
+        let mut rng = FastRng::from_system_time();
+        let board = Board::rand(&mut rng);
+
+        let mut got_white = false;
+        'outer: for _ in 0..100 {
+            for square in Square::iter() {
+                let piece = board.piece(square);
+                if piece == PieceNone {
+                    continue;
+                }
+
+                if piece.color() == White {
+                    got_white = true;
+                    break 'outer;
+                }
+            }
+        }
+
+        assert!(got_white);
     }
 
     // NOTE: This is fuzz test.

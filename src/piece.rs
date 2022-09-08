@@ -146,7 +146,10 @@ impl Piece {
     }
 
     pub fn rand(rng: &mut FastRng) -> Self {
-        Self::from_index(rng.rand_range_u8(1, 7))
+        let dignity = Dignity::from_index(rng.rand_range_u8(1, 7));
+        let color = Color::from_index(rng.rand_range_u8(0, 2));
+
+        Self::new(color, dignity)
     }
 }
 
