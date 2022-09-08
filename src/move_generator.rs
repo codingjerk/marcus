@@ -333,13 +333,19 @@ impl MoveGenerator {
         }
 
         let to = cr.king_destination();
-        unsafe { always(board.piece(to) == PieceNone) }
+        if board.piece(to) != PieceNone {
+            return;
+        }
 
         let rook_from = cr.rook_initial();
-        unsafe { always(board.piece(rook_from) == Piece::new(stm, Rook)) }
+        if board.piece(rook_from) != Piece::new(stm, Rook) {
+            return;
+        }
 
         let rook_to = cr.rook_destination();
-        unsafe { always(board.piece(rook_to) == PieceNone) }
+        if board.piece(rook_to) != PieceNone {
+            return;
+        }
 
         buffer.add(Move::king_side_castle(from, to));
     }
@@ -489,7 +495,7 @@ mod tests {
         movegen.generate(&board, &mut buffer);
         assert!(buffer.contains(Move::quiet(e1, f1)));
         assert!(buffer.contains(Move::king_side_castle(e1, g1)));
-        assert_eq!(buffer.len(), 2);
+        assert_eq!(buffer.len(), 22);
 
         let board = Board::from_fen(b"8/8/8/8/8/8/PPPPPPPP/RNBQK2R w Qkq - 0 1");
         let movegen = MoveGenerator::new();
@@ -497,7 +503,7 @@ mod tests {
 
         movegen.generate(&board, &mut buffer);
         assert!(buffer.contains(Move::quiet(e1, f1)));
-        assert_eq!(buffer.len(), 1);
+        assert_eq!(buffer.len(), 21);
 
         let board = Board::from_fen(b"8/8/8/8/8/8/PPPPPPPP/RNBQK3 w KQkq - 0 1");
         let movegen = MoveGenerator::new();
@@ -505,10 +511,14 @@ mod tests {
 
         movegen.generate(&board, &mut buffer);
         assert!(buffer.contains(Move::quiet(e1, f1)));
-        assert_eq!(buffer.len(), 1);
+        assert_eq!(buffer.len(), 19);
     }
 
     // fn queen_side_castle()
+    // fn fuzzing
+    // fn make_move
+    // fn unmake_move
+    // fn perft
 
     #[test]
     fn knights() {

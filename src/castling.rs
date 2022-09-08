@@ -91,14 +91,36 @@ impl CastlingRights {
         }
     }
 
-    pub const fn king_destination(self) -> Square {
+    pub fn king_destination(self) -> Square {
         // TODO: use separate structures for single castling and
         //       castling "map"
         match self {
-            BlackQueenSide => ,
-            BlackKingSide: CastlingRights  = CastlingRights(0b0010);
-            WhiteQueenSide: CastlingRights = CastlingRights(0b0100);
-            WhiteKingSide: CastlingRights  = CastlingRights(0b1000);
+            cr if cr == BlackQueenSide => c8,
+            cr if cr == BlackKingSide  => g8,
+            cr if cr == WhiteQueenSide => c1,
+            cr if cr == WhiteKingSide  => g1,
+            _ => unsafe { unreachable() },
+        }
+    }
+
+    pub fn rook_initial(self) -> Square {
+        match self {
+            cr if cr == BlackQueenSide => a8,
+            cr if cr == BlackKingSide  => h8,
+            cr if cr == WhiteQueenSide => a1,
+            cr if cr == WhiteKingSide  => h1,
+            _ => unsafe { unreachable() },
+        }
+    }
+
+    pub fn rook_destination(self) -> Square {
+        match self {
+            cr if cr == BlackQueenSide => d8,
+            cr if cr == BlackKingSide  => f8,
+            cr if cr == WhiteQueenSide => d1,
+            cr if cr == WhiteKingSide  => f1,
+            _ => unsafe { unreachable() },
+        }
     }
 }
 
