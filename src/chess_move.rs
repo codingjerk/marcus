@@ -19,7 +19,7 @@ pub type MoveInner = u32; // PERF: try smaller and bigger types
 pub struct Move(MoveInner);
 
 impl Move {
-    pub const Mask: MoveInner = 0b111111111111111;
+    pub const Mask: MoveInner = 0b111111111111111111;
 
     // PERF: try to store Piece instead of Dignity
     pub const fn new(
@@ -32,6 +32,7 @@ impl Move {
             (from.index() as MoveInner)
             ^ ((to.index() as MoveInner) << 6)
             ^ ((captured.index() as MoveInner) << 12)
+            ^ ((promoted.index() as MoveInner) << 15)
         ;
 
         unsafe { always(bits & Self::Mask == bits) }
@@ -114,8 +115,24 @@ impl Move {
         Dignity::from_index(index)
     }
 
+    pub const fn promoted(self) -> Dignity {
+        let index = ((self.0 >> 15) as DignityInner) & Dignity::Mask;
+
+        Dignity::from_index(index)
+    }
+
     pub const fn index(self) -> MoveInner {
         self.0
+    }
+
+    pub fn is_king_side_castle(self) -> bool {
+        (self.from().file() == FileE) &&
+        (self.to().file() == FileG)
+    }
+
+    pub fn is_queen_side_castle(self) -> bool {
+        (self.from().file() == FileE) &&
+        (self.to().file() == FileC)
     }
 }
 

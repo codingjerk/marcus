@@ -37,6 +37,10 @@ impl Color {
             _ => unsafe { unreachable() },
         }
     }
+
+    pub fn swap(&mut self) {
+        self.0 ^= 0b1;
+    }
 }
 
 pub const Black: Color = Color(0);

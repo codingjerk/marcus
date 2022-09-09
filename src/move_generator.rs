@@ -47,6 +47,38 @@ impl MoveGenerator {
         board: &mut Board,
         chess_move: Move,
     ) -> bool {
+        let piece = if chess_move.promoted() == DignityNone {
+            board.piece(chess_move.from())
+        } else {
+            Piece::new(board.side_to_move(), chess_move.promoted())
+        };
+
+        if chess_move.captured() != DignityNone {
+            unsafe {
+                always(
+                    board.piece(chess_move.to()).dignity() ==
+                    chess_move.captured()
+                );
+                always(
+                    board.piece(chess_move.to()).color() !=
+                    board.side_to_move()
+                );
+            }
+        }
+
+        board.set_piece_unchecked(chess_move.to(), piece);
+        board.remove_piece(chess_move.from());
+
+        if piece.dignity() == King && chess_move.is_king_side_castle() {
+            let stm = board.side_to_move();
+            let cr = CastlingRights::king_side(stm);
+            board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
+            board.remove_piece(cr.rook_initial());
+        }
+
+        board.swap_side_to_move();
+
+        true
     }
 
     fn generate_for_pawn(
@@ -55,7 +87,7 @@ impl MoveGenerator {
         board: &Board,
         buffer: &mut MoveBuffer,
     ) {
-        self.generate_silents_for_pawn(from, board, buffer);
+        self.generate_quiets_for_pawn(from, board, buffer);
         self.generate_capture_for_pawn(from,  1, board, buffer);
         self.generate_capture_for_pawn(from, -1, board, buffer);
         self.generate_promotions_for_pawn(from, board, buffer);
@@ -63,7 +95,7 @@ impl MoveGenerator {
         self.generate_promotion_captures_for_pawn(from, -1, board, buffer);
     }
 
-    fn generate_silents_for_pawn(
+    fn generate_quiets_for_pawn(
         &self,
         from: Square,
         board: &Board,
@@ -696,4 +728,60 @@ mod tests {
             movegen.generate(&board, &mut buffer);
         }
     }
+
+    #[test]
+    fn make_move_quiet() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::quiet(e2, e4));
+
+        assert!(legal);
+        assert_eq!(board.side_to_move(), Black);
+        assert_eq!(board.piece(e2), PieceNone);
+        assert_eq!(board.piece(e4), WhitePawn);
+    }
+
+    #[test]
+    fn make_move_promotion() {
+        let mut board = Board::from_fen(b"8/3P4/8/8/8/8/8/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::promotion(d7, d8, Queen));
+
+        assert!(legal);
+        assert_eq!(board.piece(d7), PieceNone);
+        assert_eq!(board.piece(d8), WhiteQueen);
+    }
+
+    #[test]
+    fn make_move_capture() {
+        let mut board = Board::from_fen(b"8/8/8/5r2/4P3/8/8/8 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::capture(e4, f5, Rook));
+
+        assert!(legal);
+        assert_eq!(board.piece(e4), PieceNone);
+        assert_eq!(board.piece(f5), WhitePawn);
+    }
+
+    #[test]
+    fn make_move_king_side_castle() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+
+        assert!(legal);
+        assert_eq!(board.piece(e1), PieceNone);
+        assert_eq!(board.piece(h1), PieceNone);
+
+        assert_eq!(board.piece(g1), WhiteKing);
+        assert_eq!(board.piece(f1), WhiteRook);
+    }
+
+    // Castling
+    // En-passant
+    // Legality checks
+    //
+    // un-make
+    // make-unmake fuzzing
+    // perft
 }

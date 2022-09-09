@@ -311,11 +311,22 @@ impl Board {
         result
     }
 
-    fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
+    pub fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
         let index = at.index() as usize;
-        unsafe { always(index < 64) }
 
-        self.squares[index] = piece;
+        unsafe {
+            always(index < 64);
+            *self.squares.get_unchecked_mut(index) = piece;
+        }
+    }
+
+    pub fn remove_piece(&mut self, at: Square) {
+        unsafe { always(self.piece(at) != PieceNone) }
+        self.set_piece_unchecked(at, PieceNone);
+    }
+
+    pub fn swap_side_to_move(&mut self) {
+        self.side_to_move.swap()
     }
 
     pub fn has_possible_pawn_structure(&self) -> bool {

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::prelude::*;
 
 pub type DignityInner = u8; // PERF: try smaller and bigger types
@@ -36,7 +38,7 @@ pub type PieceInner = u8; // PERF: try smaller and bigger types
 // ^ \ _ / <- Dignity
 // | - Color
 // Total bits: 1 + 3 = 4
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Piece(PieceInner);
 
 impl Piece {
@@ -150,6 +152,30 @@ impl Piece {
         let color = Color::from_index(rng.rand_range_u8(0, 2));
 
         Self::new(color, dignity)
+    }
+}
+
+impl fmt::Debug for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            BlackPawn => write!(f, "Black Pawn"),
+            BlackKnight => write!(f, "Black Knight"),
+            BlackBishop => write!(f, "Black Bishop"),
+            BlackRook => write!(f, "Black Rook"),
+            BlackQueen => write!(f, "Black Queen"),
+            BlackKing => write!(f, "Black King"),
+
+            WhitePawn => write!(f, "White Pawn"),
+            WhiteKnight => write!(f, "White Knight"),
+            WhiteBishop => write!(f, "White Bishop"),
+            WhiteRook => write!(f, "White Rook"),
+            WhiteQueen => write!(f, "White Queen"),
+            WhiteKing => write!(f, "White King"),
+
+            PieceNone => write!(f, "None (Piece)"),
+
+            _ => unsafe { unreachable() },
+        }
     }
 }
 
