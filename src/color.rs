@@ -38,8 +38,12 @@ impl Color {
         }
     }
 
+    pub fn swapped(self) -> Self {
+        Self::from_index(self.0 ^ 0b1)
+    }
+
     pub fn swap(&mut self) {
-        self.0 ^= 0b1;
+        *self = self.swapped();
     }
 }
 

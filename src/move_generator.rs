@@ -53,7 +53,20 @@ impl MoveGenerator {
             Piece::new(board.side_to_move(), chess_move.promoted())
         };
 
-        if chess_move.captured() != DignityNone {
+        let stm = board.side_to_move();
+        let ep_to = {
+            if board.en_passant_file() == FileEnPassantNone {
+                None
+            } else {
+                Some(Square::en_passant(stm, board.en_passant_file()))
+            }
+        };
+
+        if chess_move.captured() == Pawn && piece.dignity() == Pawn &&
+           Some(chess_move.to()) == ep_to {
+            println!("{:?}", ep_to.unwrap().forward(stm, 1));
+            board.remove_piece(ep_to.unwrap().forward(stm.swapped(), 1));
+        } else if chess_move.captured() != DignityNone {
             unsafe {
                 always(
                     board.piece(chess_move.to()).dignity() ==
@@ -70,8 +83,12 @@ impl MoveGenerator {
         board.remove_piece(chess_move.from());
 
         if piece.dignity() == King && chess_move.is_king_side_castle() {
-            let stm = board.side_to_move();
             let cr = CastlingRights::king_side(stm);
+            board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
+            board.remove_piece(cr.rook_initial());
+        } else if piece.dignity() == King && chess_move.is_queen_side_castle() {
+            let stm = board.side_to_move();
+            let cr = CastlingRights::queen_side(stm);
             board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_initial());
         }
@@ -777,9 +794,34 @@ mod tests {
         assert_eq!(board.piece(f1), WhiteRook);
     }
 
-    // Castling
-    // En-passant
-    // Legality checks
+    #[test]
+    fn make_move_queen_side_castle() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+
+        assert!(legal);
+        assert_eq!(board.piece(e1), PieceNone);
+        assert_eq!(board.piece(a1), PieceNone);
+
+        assert_eq!(board.piece(c1), WhiteKing);
+        assert_eq!(board.piece(d1), WhiteRook);
+    }
+
+    #[test]
+    fn make_move_en_passant() {
+        let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::en_passant(f5, g6));
+
+        assert!(legal);
+        assert_eq!(board.piece(f5), PieceNone);
+        assert_eq!(board.piece(g6), WhitePawn);
+
+        assert_eq!(board.piece(g5), PieceNone);
+    }
+
+    // Legality checks (check, castling, etc.)
     //
     // un-make
     // make-unmake fuzzing
