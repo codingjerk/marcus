@@ -564,8 +564,27 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn black_pawns() {
+        let buffer = generate(b"8/pp6/R7/8/3pP3/8/2p5/3N4 b - e3 0 1");
+
+        assert!(buffer.contains(Move::pawn_single(b7, b6)));
+        assert!(buffer.contains(Move::pawn_double(b7, b5)));
+        assert!(buffer.contains(Move::capture(b7, a6, Rook)));
+
+        assert!(buffer.contains(Move::promotion(c2, c1, Knight)));
+        assert!(buffer.contains(Move::promotion(c2, c1, Bishop)));
+        assert!(buffer.contains(Move::promotion(c2, c1, Rook)));
+        assert!(buffer.contains(Move::promotion(c2, c1, Queen)));
+
+        assert!(buffer.contains(Move::promotion_capture(c2, d1, Knight, Knight)));
+        assert!(buffer.contains(Move::promotion_capture(c2, d1, Knight, Bishop)));
+        assert!(buffer.contains(Move::promotion_capture(c2, d1, Knight, Rook)));
+        assert!(buffer.contains(Move::promotion_capture(c2, d1, Knight, Queen)));
+
+        assert!(buffer.contains(Move::pawn_single(d4, d3)));
+        assert!(buffer.contains(Move::en_passant(d4, e3)));
+
+        assert_eq!(buffer.len(), 13);
     }
 
     #[test]
