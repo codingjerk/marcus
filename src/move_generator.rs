@@ -116,13 +116,33 @@ impl MoveGenerator {
             Some(king_pos) => king_pos,
         };
 
-        // check if it can be attacked by every piece
         if self.can_be_attacked(king_pos, board, board.side_to_move()) {
             return false;
         }
 
+        if chess_move.is_king_side_castle() {
+            let leave_square = king_pos.by(-2, 0).unwrap();
+            if self.can_be_attacked(leave_square, board, board.side_to_move()) {
+                return false;
+            }
 
-        // TODO: check from, intermediate and end up squares for castling
+            let cross_square = king_pos.by(-1, 0).unwrap();
+            if self.can_be_attacked(cross_square, board, board.side_to_move()) {
+                return false;
+            }
+        }
+
+        if chess_move.is_queen_side_castle() {
+            let leave_square = king_pos.by(2, 0).unwrap();
+            if self.can_be_attacked(leave_square, board, board.side_to_move()) {
+                return false;
+            }
+
+            let cross_square = king_pos.by(1, 0).unwrap();
+            if self.can_be_attacked(cross_square, board, board.side_to_move()) {
+                return false;
+            }
+        }
 
         true
     }
@@ -1019,18 +1039,53 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn make_move_legality_castling() {
-        // TODO: leave, cross, end up
-        let mut board = Board::from_fen(b"");
+    fn make_move_legality_king_side_castle() {
+        // Leave
+        let mut board = Board::from_fen(b"4r3/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        // let legal = movegen.make_move(&mut board, Move::);
+        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
 
-        // assert!(!legal);
+        assert!(!legal);
+
+        // Cross
+        let mut board = Board::from_fen(b"5r2/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+
+        assert!(!legal);
+
+        // End-up
+        let mut board = Board::from_fen(b"6r1/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+
+        assert!(!legal);
     }
 
-    // Legality checks (check, castling, etc.)
-    //
+    #[test]
+    fn make_move_legality_queen_side_castle() {
+        // Leave
+        let mut board = Board::from_fen(b"4r3/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+
+        assert!(!legal);
+
+        // Cross
+        let mut board = Board::from_fen(b"3r4/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+
+        assert!(!legal);
+
+        // End-up
+        let mut board = Board::from_fen(b"2r5/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+
+        assert!(!legal);
+    }
+
     // un-make
     // make-unmake fuzzing
     // perft
