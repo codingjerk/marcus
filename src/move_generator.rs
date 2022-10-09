@@ -95,7 +95,158 @@ impl MoveGenerator {
 
         board.swap_side_to_move();
 
+        self.was_legal(board, chess_move)
+    }
+
+    fn was_legal(
+        &self,
+        board: &mut Board,
+        chess_move: Move,
+    ) -> bool {
+        let king = Piece::new(board.side_to_move().swapped(), King);
+        let mut king_pos = None;
+        for square in Square::iter() {
+            if board.piece(square) == king {
+                king_pos = Some(square);
+            }
+        }
+
+        let king_pos = match king_pos {
+            None => return true, // TODO: figure out better semantic
+            Some(king_pos) => king_pos,
+        };
+
+        // check if it can be attacked by every piece
+        if self.can_be_attacked(king_pos, board, board.side_to_move()) {
+            return false;
+        }
+
+
+        // TODO: check from, intermediate and end up squares for castling
+
         true
+    }
+
+    fn can_be_attacked(
+        &self,
+        target: Square,
+        board: &mut Board,
+        side_to_move: Color,
+    ) -> bool {
+        let pawn = Piece::new(side_to_move, Pawn);
+        let target_side = side_to_move.swapped();
+
+        // Left pawn attack
+        if let Some(attacker) = target.forward(target_side, 1).by(1, 0) {
+            if board.piece(attacker) == pawn {
+                return true;
+            }
+        };
+
+        // Right pawn attack
+        if let Some(attacker) = target.forward(target_side, 1).by(-1, 0) {
+            if board.piece(attacker) == pawn {
+                return true;
+            }
+        };
+
+        // Knight attacks
+        let knight = Piece::new(side_to_move, Knight);
+        for (dx, dy) in [
+            (-2, -1),
+            (-1, -2),
+            (-2,  1),
+            (-1,  2),
+            ( 2, -1),
+            ( 1, -2),
+            ( 2,  1),
+            ( 1,  2),
+        ] {
+            let attacker = match target.by(dx, dy) {
+                Some(s) => s,
+                None => continue,
+            };
+
+            if board.piece(attacker) == knight {
+                return true;
+            }
+        }
+
+        // Bishop & Queen attacks
+        let bishop = Piece::new(side_to_move, Bishop);
+        let queen = Piece::new(side_to_move, Queen);
+        for (dx, dy) in [
+            (-1, -1),
+            (-1,  1),
+            ( 1, -1),
+            ( 1,  1),
+        ] {
+            for d in 1..8 {
+                let attacker = match target.by(dx * d, dy * d) {
+                    Some(s) => s,
+                    None => break,
+                };
+
+                let attacker = board.piece(attacker);
+                if attacker == PieceNone {
+                    // pass
+                } else if attacker == bishop || attacker == queen {
+                    return true;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // Rook & Queen attacks
+        let rook = Piece::new(side_to_move, Rook);
+        let queen = Piece::new(side_to_move, Queen);
+        for (dx, dy) in [
+            ( 0,  1),
+            ( 0, -1),
+            ( 1,  0),
+            (-1,  0),
+        ] {
+            for d in 1..8 {
+                let attacker = match target.by(dx * d, dy * d) {
+                    Some(s) => s,
+                    None => break,
+                };
+
+                let attacker = board.piece(attacker);
+                if attacker == PieceNone {
+                    // pass
+                } else if attacker == rook || attacker == queen {
+                    return true;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // King attacks
+        let king = Piece::new(side_to_move, King);
+        for (dx, dy) in [
+            (-1, -1),
+            (-1,  0),
+            (-1,  1),
+            ( 0, -1),
+            ( 0,  1),
+            ( 1, -1),
+            ( 1,  0),
+            ( 1,  1),
+        ] {
+            let attacker = match target.by(dx, dy) {
+                Some(s) => s,
+                None => continue,
+            };
+
+            if board.piece(attacker) == king {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn generate_for_pawn(
@@ -838,6 +989,44 @@ mod tests {
         assert_eq!(board.piece(g6), WhitePawn);
 
         assert_eq!(board.piece(g5), PieceNone);
+    }
+
+    #[test]
+    fn make_move_legality_direct_check() {
+        let mut board = Board::from_fen(b"3r4/8/8/8/8/8/8/3KN3 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::quiet(e1, f3));
+
+        assert!(!legal);
+    }
+
+    #[test]
+    fn make_move_legality_pinned_piece() {
+        let mut board = Board::from_fen(b"3r4/8/8/8/8/8/3N4/3K4 w - - 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::quiet(d2, e4));
+
+        assert!(!legal);
+    }
+
+    #[test]
+    fn make_move_legality_en_passant_pin() {
+        let mut board = Board::from_fen(b"8/8/8/2KPp2q/8/8/8/8 w - e6 0 1");
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, Move::en_passant(d5, e6));
+
+        assert!(!legal);
+    }
+
+    #[test]
+    #[ignore]
+    fn make_move_legality_castling() {
+        // TODO: leave, cross, end up
+        let mut board = Board::from_fen(b"");
+        let movegen = MoveGenerator::new();
+        // let legal = movegen.make_move(&mut board, Move::);
+
+        // assert!(!legal);
     }
 
     // Legality checks (check, castling, etc.)
