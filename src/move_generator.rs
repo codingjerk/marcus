@@ -98,6 +98,16 @@ impl MoveGenerator {
         self.was_legal(board, chess_move)
     }
 
+    pub fn unmake_move(
+        &self,
+        board: &mut Board,
+        chess_move: Move,
+    ) {
+        let moved_piece = board.piece(chess_move.to()); // TODO: try to get from chess_move
+        board.remove_piece(chess_move.to());
+        board.set_piece(chess_move.from(), moved_piece);
+    }
+
     fn was_legal(
         &self,
         board: &mut Board,
@@ -1086,7 +1096,35 @@ mod tests {
         assert!(!legal);
     }
 
+    #[test]
+    fn unmake_move_quiet() {
+        let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
+        let chess_move = Move::quiet(a1, c1);
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(legal);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.piece(c1), PieceNone);
+        assert_eq!(board.piece(a1), WhiteRook);
+    }
+
+    // TODO: separate undo-structure ???
+    // var1: keep actual values on stack, copy to stack in make, pop stack in unmake
+    // var2: keep actual values in board, change in-place in make, restore from stack in unmake
+
     // un-make
+    // - simple
+    // - capture return captured
+    // - promotion un-promote
+    // - castling return rook
+    // - enpassant return captured
+
+    // - castping rights
+    // - en-passant square
+    // - halfmove clock
+
     // make-unmake fuzzing
     // perft
 }

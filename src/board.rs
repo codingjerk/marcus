@@ -311,6 +311,14 @@ impl Board {
         result
     }
 
+    pub fn set_piece(&mut self, at: Square, piece: Piece) {
+        unsafe {
+            always(self.piece(at) == PieceNone);
+        }
+
+        self.set_piece_unchecked(at, piece);
+    }
+
     pub fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
         let index = at.index() as usize;
 
