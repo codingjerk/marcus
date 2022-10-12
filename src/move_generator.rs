@@ -104,8 +104,17 @@ impl MoveGenerator {
         chess_move: Move,
     ) {
         let moved_piece = board.piece(chess_move.to()); // TODO: try to get from chess_move
-        board.remove_piece(chess_move.to());
         board.set_piece(chess_move.from(), moved_piece);
+
+        board.remove_piece(chess_move.to());
+
+        if chess_move.captured() != DignityNone {
+            let captured_piece = Piece::new(
+                board.side_to_move(),
+                chess_move.captured(),
+            );
+            board.set_piece(chess_move.to(), captured_piece);
+        }
     }
 
     fn was_legal(
