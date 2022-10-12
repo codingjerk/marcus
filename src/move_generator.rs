@@ -103,8 +103,17 @@ impl MoveGenerator {
         board: &mut Board,
         chess_move: Move,
     ) {
-        let moved_piece = board.piece(chess_move.to()); // TODO: try to get from chess_move
-        board.set_piece(chess_move.from(), moved_piece);
+        if chess_move.promoted() != DignityNone {
+            let pawn = Piece::new(
+                board.side_to_move().swapped(),
+                Pawn,
+            );
+
+            board.set_piece(chess_move.from(), pawn);
+        } else {
+            let moved_piece = board.piece(chess_move.to()); // TODO: try to get from chess_move
+            board.set_piece(chess_move.from(), moved_piece);
+        }
 
         board.remove_piece(chess_move.to());
 
@@ -1119,14 +1128,39 @@ mod tests {
         assert_eq!(board.piece(a1), WhiteRook);
     }
 
+    #[test]
+    fn unmake_move_capture() {
+        let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R1b1K3 w KQkq - 0 1");
+        let chess_move = Move::capture(a1, c1, Bishop);
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(legal);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.piece(c1), BlackBishop);
+        assert_eq!(board.piece(a1), WhiteRook);
+    }
+
+    #[test]
+    fn unmake_move_promotion() {
+        let mut board = Board::from_fen(b"8/4P3/8/8/8/8/8/1K6 w - - 0 1");
+        let chess_move = Move::promotion(e7, e8, Queen);
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(legal);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.piece(e7), WhitePawn);
+        assert_eq!(board.piece(e8), PieceNone);
+    }
+
     // TODO: separate undo-structure ???
     // var1: keep actual values on stack, copy to stack in make, pop stack in unmake
     // var2: keep actual values in board, change in-place in make, restore from stack in unmake
 
     // un-make
-    // - simple
-    // - capture return captured
-    // - promotion un-promote
     // - castling return rook
     // - enpassant return captured
 
