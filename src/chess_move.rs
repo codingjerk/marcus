@@ -147,7 +147,9 @@ impl fmt::Debug for Move {
         //       and use it here
         write!(f, "{}", unsafe {
             std::str::from_utf8_unchecked(&bytes)
-        })
+        })?;
+
+        write!(f, "{}", self.promoted().as_char())
     }
 }
 
@@ -162,5 +164,12 @@ mod tests {
         assert_eq!(a2, chess_move.from());
         assert_eq!(a3, chess_move.to());
         assert_eq!(DignityNone, chess_move.captured());
+    }
+
+    #[test]
+    fn format_promotion() {
+        let chess_move = Move::promotion(a7, a8, Queen);
+
+        assert_eq!(format!("{:?}", chess_move), "a7a8Q");
     }
 }

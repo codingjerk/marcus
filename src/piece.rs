@@ -31,6 +31,21 @@ pub const Rook: Dignity   = Dignity(4);
 pub const Queen: Dignity  = Dignity(5);
 pub const King: Dignity   = Dignity(6);
 
+impl Dignity {
+    pub fn as_char(&self) -> char {
+        match *self {
+            x if x == Pawn => 'P',
+            x if x == Knight => 'N',
+            x if x == Bishop => 'B',
+            x if x == Rook => 'R',
+            x if x == Queen => 'Q',
+            x if x == King => 'K',
+
+            _ => unsafe { unreachable() },
+        }
+    }
+}
+
 pub type PieceInner = u8; // PERF: try smaller and bigger types
 
 // Bit structure:
