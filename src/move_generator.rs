@@ -132,6 +132,11 @@ impl MoveGenerator {
             let cr = CastlingRights::queen_side(stm);
             board.set_piece_unchecked(cr.rook_initial(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_destination());
+        } else if moved_piece.dignity() == King && chess_move.is_king_side_castle() {
+            let stm = board.side_to_move().swapped();
+            let cr = CastlingRights::king_side(stm);
+            board.set_piece_unchecked(cr.rook_initial(), Piece::new(stm, Rook));
+            board.remove_piece(cr.rook_destination());
         }
 
         board.swap_side_to_move();
@@ -1182,6 +1187,17 @@ mod tests {
         assert_eq!(board.piece(a1), WhiteRook);
         assert_eq!(board.piece(c1), PieceNone);
         assert_eq!(board.piece(d1), PieceNone);
+
+        let chess_move = Move::king_side_castle(e1, g1);
+        let legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(legal);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.piece(e1), WhiteKing);
+        assert_eq!(board.piece(h1), WhiteRook);
+        assert_eq!(board.piece(g1), PieceNone);
+        assert_eq!(board.piece(f1), PieceNone);
     }
 
     #[test]
@@ -1198,7 +1214,10 @@ mod tests {
 
     // un-make
     // - castling return rook
-    // - castping rights
+    // - castling rights
+    //   - king move
+    //   - rook move
+    //   - rook capture
 
     // - enpassant return captured
     // - en-passant square
