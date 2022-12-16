@@ -111,10 +111,11 @@ impl MoveGenerator {
 
             board.set_piece(chess_move.from(), pawn);
         } else {
-            let moved_piece = board.piece(chess_move.to()); // TODO: try to get from chess_move
+            let moved_piece = board.piece(chess_move.to()); // PERF: try to get from chess_move
             board.set_piece(chess_move.from(), moved_piece);
         }
 
+        let moved_piece = board.piece(chess_move.to()); // PERF: try to get from chess_move
         board.remove_piece(chess_move.to());
 
         if chess_move.captured() != DignityNone {
@@ -124,6 +125,16 @@ impl MoveGenerator {
             );
             board.set_piece(chess_move.to(), captured_piece);
         }
+
+        // TODO: refactor this part
+        if moved_piece.dignity() == King && chess_move.is_queen_side_castle() {
+            let stm = board.side_to_move().swapped();
+            let cr = CastlingRights::queen_side(stm);
+            board.set_piece_unchecked(cr.rook_initial(), Piece::new(stm, Rook));
+            board.remove_piece(cr.rook_destination());
+        }
+
+        board.swap_side_to_move();
     }
 
     fn was_legal(
@@ -1156,17 +1167,50 @@ mod tests {
         assert_eq!(board.piece(e8), PieceNone);
     }
 
+    #[test]
+    fn unmake_move_castle_rook() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+        let chess_move = Move::queen_side_castle(e1, c1);
+
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(legal);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.piece(e1), WhiteKing);
+        assert_eq!(board.piece(a1), WhiteRook);
+        assert_eq!(board.piece(c1), PieceNone);
+        assert_eq!(board.piece(d1), PieceNone);
+    }
+
+    #[test]
+    fn unmake_move_restores_side_to_move() {
+        let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
+        let chess_move = Move::quiet(a1, c1);
+        let movegen = MoveGenerator::new();
+        let _ = movegen.make_move(&mut board, chess_move);
+        assert_eq!(board.side_to_move(), Black);
+
+        movegen.unmake_move(&mut board, chess_move);
+        assert_eq!(board.side_to_move(), White);
+    }
+
+    // un-make
+    // - castling return rook
+    // - castping rights
+
+    // - enpassant return captured
+    // - en-passant square
+
     // TODO: separate undo-structure ???
     // var1: keep actual values on stack, copy to stack in make, pop stack in unmake
     // var2: keep actual values in board, change in-place in make, restore from stack in unmake
 
-    // un-make
-    // - castling return rook
-    // - enpassant return captured
+    // - tests for multiple make-unmake (tests for undo structure)
+    // - halfmove clock (50-moves rule)
 
-    // - castping rights
-    // - en-passant square
-    // - halfmove clock
+    // STYLE: castle / castling in codebase
 
     // make-unmake fuzzing
     // perft
