@@ -84,18 +84,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: ~/artifacts/
-      - name: Generate changelog
-        uses: orhun/git-cliff-action@v1
-        with:
-          args: --latest --unreleased
-        env:
-          OUTPUT: CHANGELOG.md
-      - name: Upload changelog
-        uses: actions/upload-artifact@v2
-        with:
-          name: CHANGELOG.md
-          path: CHANGELOG.md
-          if-no-files-found: error
       - name: Combine release notes
         run: |
           echo "### Downloads" >> notes.txt
@@ -105,15 +93,14 @@ jobs:
           echo "### Score" >> notes.txt
           echo "Currently no scores are calculated automatically" >> notes.txt
           echo "### Changelog" >> notes.txt
-          cat CHANGELOG.md >> notes.txt
+          echo "Currently changelog doesn't generate automatically" >> notes.txt
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          name: Beta v${{ github.run_number }}
+          name: Nightly v${{ github.run_number }}
           tag_name: v${{ github.run_number }}
           body_path: notes.txt
           prerelease: true
           fail_on_unmatched_files: true
           files: |
-            CHANGELOG.md
             /home/runner/artifacts/**
