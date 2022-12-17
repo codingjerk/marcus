@@ -37,7 +37,6 @@ jobs:
       matrix:
         include:
           - { target: aarch64-linux-android, name: marcus_android_aarch64, src_file_name: marcus, dst_file_name: marcus_android_aarch64 }
-          - { target: aarch64-apple-darwin, name: marcus_macos_aarch64, src_file_name: marcus, dst_file_name: marcus_macos_aarch64 }
           - { target: x86_64-unknown-linux-gnu, name: marcus_linux_x86_64, src_file_name: marcus, dst_file_name: marcus_linux_x86_64 }
           - { target: x86_64-pc-windows-gnu, name: marcus_windows_x86_64, src_file_name: marcus.exe, dst_file_name: marcus_windows_x86_64.exe }
     steps:
@@ -101,7 +100,6 @@ jobs:
         run: |
           echo "### Downloads" >> notes.txt
           echo "- [Android (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_android_aarch64)" >> notes.txt
-          echo "- [MacOS (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_macos_aarch64)" >> notes.txt
           echo "- [Linux (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_linux_x86_64)" >> notes.txt
           echo "- [Windows (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_windows_x86_64.exe)" >> notes.txt
           echo "### Score" >> notes.txt
