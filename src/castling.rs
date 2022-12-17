@@ -39,6 +39,14 @@ impl CastlingRights {
         }
     }
 
+    pub const fn both(side_to_move: Color) -> Self {
+        match side_to_move {
+            Black => CastlingRightsBlack,
+            White => CastlingRightsWhite,
+            _ => unsafe { unreachable() },
+        }
+    }
+
     pub const fn index(self) -> CastlingRightsInner {
         self.0
     }
@@ -73,6 +81,11 @@ impl CastlingRights {
     #[inline]
     pub fn allow(&mut self, other: Self) {
         self.0 |= other.0;
+    }
+
+    #[inline]
+    pub fn disallow(&mut self, other: Self) {
+        self.0 &= !other.0;
     }
 
     #[inline]
@@ -138,5 +151,8 @@ pub const BlackQueenSide: CastlingRights = CastlingRights(0b0001);
 pub const BlackKingSide: CastlingRights  = CastlingRights(0b0010);
 pub const WhiteQueenSide: CastlingRights = CastlingRights(0b0100);
 pub const WhiteKingSide: CastlingRights  = CastlingRights(0b1000);
+
+pub const CastlingRightsBlack: CastlingRights = CastlingRights(0b0011);
+pub const CastlingRightsWhite: CastlingRights = CastlingRights(0b1100);
 
 pub const CastlingRightsAll: CastlingRights = CastlingRights(0b1111);

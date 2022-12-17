@@ -1,9 +1,14 @@
 use crate::prelude::*;
 
 type HalfmoveClock = u16; // PERF: try smaller and bigger types
+type Ply = usize; // PERF: try smaller and bigger types
+
 const MAX_HALFMOVE_CLOCK: HalfmoveClock = 999;
 const MIN_FEN_SIZE: usize = 24;
 const MAX_FEN_SIZE: usize = 90;
+
+// TODO: make sure it's enought
+const UNDO_STACK_LENGTH: usize = 100;
 
 // TODO: move to board/mailbox8x8
 #[derive(Debug, PartialEq)]
@@ -16,21 +21,25 @@ pub struct Board {
     side_to_move: Color,
     halfmove_clock: HalfmoveClock,
 
-    // Undo list
-    // TODO: move to array
-    // PERF: try different memory layouts
-    castling_rights: CastlingRights,
+    // PERF: try different memory layouts (AoS vs SoA)
+    // Undo stacks
+    ply: Ply,
+    castling_rights: [CastlingRights; UNDO_STACK_LENGTH],
     en_passant_file: File,
 }
 
 impl Board {
     pub fn empty() -> Self {
         Board {
+            // Basic structure
             squares: [PieceNone; 64],
             side_to_move: White,
-            castling_rights: CastlingRightsNone,
-            en_passant_file: FileEnPassantNone,
             halfmove_clock: 0,
+
+            // Undo stacks
+            ply: 0,
+            castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
+            en_passant_file: FileEnPassantNone,
         }
     }
 
@@ -44,9 +53,12 @@ impl Board {
         let mut result = Self {
             squares: [PieceNone; 64],
             side_to_move: unsafe { undefined() },
-            castling_rights: unsafe { undefined() },
-            en_passant_file: unsafe { undefined() },
             halfmove_clock: unsafe { undefined() },
+
+            // Undo stacks
+            ply: 0,
+            castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
+            en_passant_file: unsafe { undefined() },
         };
 
         let mut fen_index: u8 = 0;
@@ -109,7 +121,7 @@ impl Board {
         skip_char!(b' ');
 
         // 3. Castling rights
-        result.castling_rights.unset();
+        result.castling_rights[0].unset();
         loop {
             match fen_char!() {
                 b' ' => {
@@ -122,7 +134,7 @@ impl Board {
                     break;
                 },
                 right => {
-                    result.castling_rights.set_from_fen(right);
+                    result.castling_rights[0].set_from_fen(right);
                 },
             }
 
@@ -188,7 +200,7 @@ impl Board {
     }
 
     pub const fn castling_rights(&self) -> CastlingRights {
-        self.castling_rights
+        self.castling_rights[self.ply]
     }
 
     pub const fn en_passant_file(&self) -> File {
@@ -292,10 +304,10 @@ impl Board {
         if rng.rand_bool() { result.side_to_move = Black }
 
         // 3. Castling rights
-        if rng.rand_bool() { result.castling_rights.allow(BlackKingSide) }
-        if rng.rand_bool() { result.castling_rights.allow(BlackQueenSide) }
-        if rng.rand_bool() { result.castling_rights.allow(WhiteKingSide) }
-        if rng.rand_bool() { result.castling_rights.allow(WhiteQueenSide) }
+        if rng.rand_bool() { result.castling_rights[0].allow(BlackKingSide) }
+        if rng.rand_bool() { result.castling_rights[0].allow(BlackQueenSide) }
+        if rng.rand_bool() { result.castling_rights[0].allow(WhiteKingSide) }
+        if rng.rand_bool() { result.castling_rights[0].allow(WhiteQueenSide) }
 
         // 4. En passant target square
         if rng.rand_bool() {
@@ -335,6 +347,25 @@ impl Board {
 
     pub fn swap_side_to_move(&mut self) {
         self.side_to_move.swap()
+    }
+
+    pub fn push_undo(&mut self) {
+        let prev_ply = self.ply;
+        self.ply += 1;
+
+        unsafe { always(self.ply < UNDO_STACK_LENGTH) }
+
+        self.castling_rights[self.ply] = self.castling_rights[prev_ply];
+    }
+
+    pub fn pop_undo(&mut self) {
+        unsafe { always(self.ply > 0) }
+
+        self.ply -= 1;
+    }
+
+    pub fn disallow_castling(&mut self, rights: CastlingRights) {
+        self.castling_rights[self.ply].disallow(rights);
     }
 
     pub fn has_possible_pawn_structure(&self) -> bool {

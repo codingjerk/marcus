@@ -92,6 +92,15 @@ impl MoveGenerator {
             board.remove_piece(cr.rook_initial());
         }
 
+        // TODO: refactor
+        // PERF: try to collect disallow mask first, then do
+        //       board.push_castling_rights(disallow_mask)
+        board.push_undo();
+        if piece.dignity() == King || piece.dignity() == Rook {
+            let stm = board.side_to_move();
+            board.disallow_castling(CastlingRights::both(stm));
+        }
+
         board.swap_side_to_move();
 
         self.was_legal(board, chess_move)
@@ -138,6 +147,7 @@ impl MoveGenerator {
             board.remove_piece(cr.rook_destination());
         }
 
+        board.pop_undo();
         board.swap_side_to_move();
     }
 
@@ -1130,6 +1140,17 @@ mod tests {
     }
 
     #[test]
+    fn make_move_king_move_resets_castling_rights() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+        let chess_move = Move::queen_side_castle(e1, c1);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+        assert!(!board.castling_rights().is_allowed(WhiteKingSide));
+        assert!(!board.castling_rights().is_allowed(WhiteQueenSide));
+    }
+
+    #[test]
     fn unmake_move_quiet() {
         let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
         let chess_move = Move::quiet(a1, c1);
@@ -1197,6 +1218,19 @@ mod tests {
         assert_eq!(board.piece(h1), WhiteRook);
         assert_eq!(board.piece(g1), PieceNone);
         assert_eq!(board.piece(f1), PieceNone);
+    }
+
+    #[test]
+    fn unmake_move_restore_castle_rights() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+        let chess_move = Move::queen_side_castle(e1, c1);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert!(board.castling_rights().is_allowed(WhiteKingSide));
+        assert!(board.castling_rights().is_allowed(WhiteQueenSide));
     }
 
     #[test]
