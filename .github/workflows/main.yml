@@ -1,0 +1,121 @@
+name: Main workflow
+on:
+  push:
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /usr/share/rust
+            ~/.cargo
+            ~/.rustup
+            target
+          key: ${{ github.job }}
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          default: true
+      - name: Test
+        run: cargo test
+      - name: Bench
+        run: cargo bench
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { target: aarch64-linux-android, name: marcus_android_aarch64, src_file_name: marcus, dst_file_name: marcus_android_aarch64 }
+          - { target: aarch64-apple-darwin, name: marcus_macos_aarch64, src_file_name: marcus, dst_file_name: marcus_macos_aarch64 }
+          - { target: x86_64-unknown-linux-gnu, name: marcus_linux_x86_64, src_file_name: marcus, dst_file_name: marcus_linux_x86_64 }
+          - { target: x86_64-pc-windows-gnu, name: marcus_windows_x86_64, src_file_name: marcus.exe, dst_file_name: marcus_windows_x86_64.exe }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            /usr/share/rust
+            ~/.cargo
+            ~/.rustup
+            target
+          key: ${{ github.job }}-${{ matrix.name }}
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          default: true
+      - name: Install dependencies
+        run: |
+          cargo install cross
+          rustup target add ${{ matrix.target }}
+      - name: Build
+        run: cross build --release --target=${{ matrix.target }}
+      - name: Rename artifact
+        run: mv target/${{ matrix.target }}/release/${{ matrix.src_file_name }} ${{ matrix.dst_file_name }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.dst_file_name }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: [ test, build ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Full checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ~/artifacts/
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v1
+        with:
+          args: --latest --unreleased
+        env:
+          OUTPUT: CHANGELOG.md
+      - name: Upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: CHANGELOG.md
+          path: CHANGELOG.md
+          if-no-files-found: error
+      - name: Combine release notes
+        run: |
+          echo "### Downloads" >> notes.txt
+          echo "- [Android (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_android_aarch64)" >> notes.txt
+          echo "- [MacOS (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_macos_aarch64)" >> notes.txt
+          echo "- [Linux (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_linux_x86_64)" >> notes.txt
+          echo "- [Windows (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_windows_x86_64.exe)" >> notes.txt
+          echo "### Score" >> notes.txt
+          echo "Currently no scores are calculated automatically" >> notes.txt
+          echo "### Changelog" >> notes.txt
+          cat CHANGELOG.md >> notes.txt
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Beta v${{ github.run_number }}
+          tag_name: v${{ github.run_number }}
+          body_path: notes.txt
+          prerelease: true
+          fail_on_unmatched_files: true
+          files: |
+            CHANGELOG.md
+            /home/runner/artifacts/**
