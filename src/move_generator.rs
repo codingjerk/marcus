@@ -64,7 +64,6 @@ impl MoveGenerator {
 
         if chess_move.captured() == Pawn && piece.dignity() == Pawn &&
            Some(chess_move.to()) == ep_to {
-            println!("{:?}", ep_to.unwrap().forward(stm, 1));
             board.remove_piece(ep_to.unwrap().forward(stm.swapped(), 1));
         } else if chess_move.captured() != DignityNone {
             unsafe {
