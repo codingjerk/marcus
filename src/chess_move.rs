@@ -126,6 +126,9 @@ impl Move {
     }
 
     // TODO: find a way to make these functions const
+    // TODO: consider passing moved dignity here
+    //       to make sure it returns true only for king moves
+    //       current implementation is too lose
     pub fn is_king_side_castle(self) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileG)
@@ -161,12 +164,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn bit_magic() {
-        let chess_move = Move::capture(a2, a3, DignityNone);
+    fn bit_stucture() {
+        let chess_move = Move::capture(a2, a3, Pawn);
 
         assert_eq!(a2, chess_move.from());
         assert_eq!(a3, chess_move.to());
-        assert_eq!(DignityNone, chess_move.captured());
+        assert_eq!(Pawn, chess_move.captured());
     }
 
     #[test]

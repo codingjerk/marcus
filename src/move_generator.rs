@@ -127,12 +127,12 @@ impl MoveGenerator {
         board: &mut Board,
         chess_move: Move,
     ) {
-        if chess_move.promoted() != DignityNone {
-            let pawn = Piece::new(
-                board.side_to_move().swapped(),
-                Pawn,
-            );
+        // TODO: choose better names
+        let stm = board.side_to_move();
+        let opp_color = stm.swapped();
 
+        if chess_move.promoted() != DignityNone {
+            let pawn = Piece::new(opp_color, Pawn);
             board.set_piece(chess_move.from(), pawn);
         } else {
             let moved_piece = board.piece(chess_move.to()); // PERF: try to get from chess_move
