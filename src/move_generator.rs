@@ -1212,7 +1212,7 @@ mod tests {
     }
 
     #[test]
-    fn unmake_move_castle_rook() {
+    fn unmake_move_castle_moves_rook() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
         let chess_move = Move::queen_side_castle(e1, c1);
 
