@@ -125,6 +125,7 @@ impl Move {
         self.0
     }
 
+    // TODO: find a way to make these functions const
     pub fn is_king_side_castle(self) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileG)
@@ -146,7 +147,12 @@ impl fmt::Debug for Move {
             std::str::from_utf8_unchecked(&bytes)
         })?;
 
-        write!(f, "{}", self.promoted().as_char())
+        let promoted = self.promoted();
+        if promoted != DignityNone {
+            write!(f, "{}", promoted.as_char())?;
+        }
+
+        Ok(())
     }
 }
 
@@ -168,5 +174,12 @@ mod tests {
         let chess_move = Move::promotion(a7, a8, Queen);
 
         assert_eq!(format!("{:?}", chess_move), "a7a8Q");
+    }
+
+    #[test]
+    fn format_capture() {
+        let chess_move = Move::capture(e4, f5, Rook);
+
+        assert_eq!(format!("{:?}", chess_move), "e4f5");
     }
 }
