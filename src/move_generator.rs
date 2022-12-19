@@ -1189,6 +1189,18 @@ mod tests {
     }
 
     #[test]
+    fn unmake_move_restores_side_to_move() {
+        let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
+        let chess_move = Move::quiet(a1, c1);
+        let movegen = MoveGenerator::new();
+        let _ = movegen.make_move(&mut board, chess_move);
+        assert_eq!(board.side_to_move(), Black);
+
+        movegen.unmake_move(&mut board, chess_move);
+        assert_eq!(board.side_to_move(), White);
+    }
+
+    #[test]
     fn unmake_move_quiet() {
         let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
         let chess_move = Move::quiet(a1, c1);
@@ -1269,18 +1281,6 @@ mod tests {
 
         assert!(board.castling_rights().is_allowed(WhiteKingSide));
         assert!(board.castling_rights().is_allowed(WhiteQueenSide));
-    }
-
-    #[test]
-    fn unmake_move_restores_side_to_move() {
-        let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
-        let chess_move = Move::quiet(a1, c1);
-        let movegen = MoveGenerator::new();
-        let _ = movegen.make_move(&mut board, chess_move);
-        assert_eq!(board.side_to_move(), Black);
-
-        movegen.unmake_move(&mut board, chess_move);
-        assert_eq!(board.side_to_move(), White);
     }
 
     // un-make
