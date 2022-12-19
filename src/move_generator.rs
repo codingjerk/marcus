@@ -96,9 +96,17 @@ impl MoveGenerator {
         // PERF: try to collect disallow mask first, then do
         //       board.push_castling_rights(disallow_mask)
         board.push_undo();
-        if piece.dignity() == King || piece.dignity() == Rook {
-            let stm = board.side_to_move();
+        let stm = board.side_to_move();
+        if piece.dignity() == King {
             board.disallow_castling(CastlingRights::both(stm));
+        }
+
+        if piece.dignity() == Rook && chess_move.from().file() == FileA {
+            board.disallow_castling(CastlingRights::queen_side(stm));
+        }
+
+        if piece.dignity() == Rook && chess_move.from().file() == FileH {
+            board.disallow_castling(CastlingRights::king_side(stm));
         }
 
         board.swap_side_to_move();
@@ -1151,6 +1159,17 @@ mod tests {
     }
 
     #[test]
+    fn make_move_rook_move_resets_castling_rights() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+        let chess_move = Move::quiet(a1, a2);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+        assert!(board.castling_rights().is_allowed(WhiteKingSide));
+        assert!(!board.castling_rights().is_allowed(WhiteQueenSide));
+    }
+
+    #[test]
     fn unmake_move_quiet() {
         let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
         let chess_move = Move::quiet(a1, c1);
@@ -1248,8 +1267,6 @@ mod tests {
     // un-make
     // - castling return rook
     // - castling rights
-    //   - king move
-    //   - rook move
     //   - rook capture
 
     // - enpassant return captured
