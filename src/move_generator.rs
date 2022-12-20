@@ -142,24 +142,24 @@ impl MoveGenerator {
         let moved_piece = board.piece(chess_move.to()); // PERF: try to get from chess_move
         board.remove_piece(chess_move.to());
 
-        if chess_move.captured() != DignityNone {
-            let captured_piece = Piece::new(
-                board.side_to_move(),
-                chess_move.captured(),
-            );
+        if chess_move.is_en_passant() {
+            // PERF: it's always Pawn, try to hardcode
+            let captured_piece = Piece::new(stm, chess_move.captured());
+            let en_passant_square = chess_move.to().forward(stm, 1);
+            board.set_piece(en_passant_square, captured_piece);
+        } else if chess_move.captured() != DignityNone {
+            let captured_piece = Piece::new(stm, chess_move.captured());
             board.set_piece(chess_move.to(), captured_piece);
         }
 
         // TODO: refactor this part
         if moved_piece.dignity() == King && chess_move.is_queen_side_castle() {
-            let stm = board.side_to_move().swapped();
-            let cr = CastlingRights::queen_side(stm);
-            board.set_piece_unchecked(cr.rook_initial(), Piece::new(stm, Rook));
+            let cr = CastlingRights::queen_side(opp_color);
+            board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
         } else if moved_piece.dignity() == King && chess_move.is_king_side_castle() {
-            let stm = board.side_to_move().swapped();
-            let cr = CastlingRights::king_side(stm);
-            board.set_piece_unchecked(cr.rook_initial(), Piece::new(stm, Rook));
+            let cr = CastlingRights::king_side(opp_color);
+            board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
         }
 
@@ -1283,9 +1283,21 @@ mod tests {
         assert!(board.castling_rights().is_allowed(WhiteQueenSide));
     }
 
+    #[test]
+    fn unmake_move_restore_en_passant_captured_pawn() {
+        let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
+        let movegen = MoveGenerator::new();
+        let chess_move = Move::en_passant(f5, g6);
+        let _legal = movegen.make_move(&mut board, Move::en_passant(f5, g6));
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.piece(g5), BlackPawn);
+    }
+
     // un-make
-    // - enpassant return captured
     // - en-passant square
+    //   - every move resets it
+    //   - pawn double sets it
 
     // TODO: separate undo-structure ???
     // var1: keep actual values on stack, copy to stack in make, pop stack in unmake

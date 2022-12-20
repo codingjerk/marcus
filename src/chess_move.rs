@@ -5,13 +5,14 @@ use crate::prelude::*;
 pub type MoveInner = u32; // PERF: try smaller and bigger types
 
 // Bit structure:
-// - - - - - - - - - - - - - - - -
-// \___/ \___/ [  from ] [  to   ]
-//   ^     ^
-//   |     | - captured piece
-//   |
-//   | - promoted piece
-// Total bits: 3 + 3 + 5 + 5 = 16
+// - - - - - - - - - - - - - - - - - - -
+// _ \___/ \___/ [   from  ] [   to    ]
+// ^   ^     ^
+// |   |     | - captured piece
+// |   |
+// |   | - promoted piece
+// | - special bit
+// Total bits: 1 + 3 + 3 + 6 + 6 = 19
 // PERF: promoted piece could be encoded in special
 //       bits to save space cause it's impossible
 //       to promote to king or pawn
@@ -19,7 +20,7 @@ pub type MoveInner = u32; // PERF: try smaller and bigger types
 pub struct Move(MoveInner);
 
 impl Move {
-    pub const Mask: MoveInner = 0b111111111111111111;
+    pub const Mask: MoveInner = 0b1111111111111111111;
 
     // PERF: try to store Piece instead of Dignity
     pub const fn new(
@@ -27,12 +28,15 @@ impl Move {
         to: Square,
         captured: Dignity,
         promoted: Dignity,
+        special_bits: MoveInner,
     ) -> Self {
         let bits =
             (from.index() as MoveInner)
             ^ ((to.index() as MoveInner) << 6)
             ^ ((captured.index() as MoveInner) << 12)
             ^ ((promoted.index() as MoveInner) << 15)
+            // TODO: refactor special bits
+            ^ special_bits << 18
         ;
 
         unsafe { always(bits & Self::Mask == bits) }
@@ -41,27 +45,37 @@ impl Move {
     }
 
     pub const fn capture(from: Square, to: Square, captured: Dignity) -> Self {
-        Self::new(from, to, captured, DignityNone)
+        // TODO: check captured is not None
+
+        Self::new(from, to, captured, DignityNone, 0)
     }
 
     pub const fn quiet(from: Square, to: Square) -> Self {
-        Self::new(from, to, DignityNone, DignityNone)
+        Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
     pub const fn pawn_single(from: Square, to: Square) -> Self {
-        Self::new(from, to, DignityNone, DignityNone)
+        // TODO: check from and to squares
+
+        Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
     pub const fn pawn_double(from: Square, to: Square) -> Self {
-        Self::new(from, to, DignityNone, DignityNone)
+        // TODO: check from and to squares
+
+        Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
     pub const fn en_passant(from: Square, to: Square) -> Self {
-        Self::new(from, to, Pawn, DignityNone)
+        // TODO: check from and to squares
+
+        Self::new(from, to, Pawn, DignityNone, 1)
     }
 
     pub const fn promotion(from: Square, to: Square, promoted: Dignity) -> Self {
-        Self::new(from, to, DignityNone, promoted)
+        // TODO: check from and to squares
+
+        Self::new(from, to, DignityNone, promoted, 0)
     }
 
     pub const fn promotion_capture(
@@ -70,7 +84,9 @@ impl Move {
         captured: Dignity,
         promoted: Dignity,
     ) -> Self {
-        Self::new(from, to, captured, promoted)
+        // TODO: check from and to squares
+
+        Self::new(from, to, captured, promoted, 0)
     }
 
     pub fn king_side_castle(
@@ -82,7 +98,7 @@ impl Move {
             always(to.file() == FileG);
         }
 
-        Self::new(from, to, DignityNone, DignityNone)
+        Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
     pub fn queen_side_castle(
@@ -94,7 +110,7 @@ impl Move {
             always(to.file() == FileC);
         }
 
-        Self::new(from, to, DignityNone, DignityNone)
+        Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
     pub const fn from(self) -> Square {
@@ -137,6 +153,11 @@ impl Move {
     pub fn is_queen_side_castle(self) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileC)
+    }
+
+    pub fn is_en_passant(self) -> bool {
+        // TODO: refactor
+        self.index() & (1 << 18) != 0
     }
 }
 
