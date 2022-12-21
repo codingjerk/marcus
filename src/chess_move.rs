@@ -89,7 +89,7 @@ impl Move {
         Self::new(from, to, captured, promoted, 0)
     }
 
-    pub fn king_side_castle(
+    pub fn king_side_castling(
         from: Square,
         to: Square,
     ) -> Self {
@@ -101,7 +101,7 @@ impl Move {
         Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
-    pub fn queen_side_castle(
+    pub fn queen_side_castling(
         from: Square,
         to: Square,
     ) -> Self {
@@ -156,12 +156,12 @@ impl Move {
         )
     }
 
-    pub fn is_king_side_castle(self) -> bool {
+    pub fn is_king_side_castling(self) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileG)
     }
 
-    pub fn is_queen_side_castle(self) -> bool {
+    pub fn is_queen_side_castling(self) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileC)
     }

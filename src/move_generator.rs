@@ -82,11 +82,11 @@ impl MoveGenerator {
         board.set_piece_unchecked(chess_move.to(), piece);
         board.remove_piece(chess_move.from());
 
-        if piece.dignity() == King && chess_move.is_king_side_castle() {
+        if piece.dignity() == King && chess_move.is_king_side_castling() {
             let cr = CastlingRights::king_side(stm);
             board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_initial());
-        } else if piece.dignity() == King && chess_move.is_queen_side_castle() {
+        } else if piece.dignity() == King && chess_move.is_queen_side_castling() {
             let stm = board.side_to_move();
             let cr = CastlingRights::queen_side(stm);
             board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
@@ -162,11 +162,11 @@ impl MoveGenerator {
         }
 
         // TODO: refactor this part
-        if moved_piece.dignity() == King && chess_move.is_queen_side_castle() {
+        if moved_piece.dignity() == King && chess_move.is_queen_side_castling() {
             let cr = CastlingRights::queen_side(opp_color);
             board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
-        } else if moved_piece.dignity() == King && chess_move.is_king_side_castle() {
+        } else if moved_piece.dignity() == King && chess_move.is_king_side_castling() {
             let cr = CastlingRights::king_side(opp_color);
             board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
@@ -198,7 +198,7 @@ impl MoveGenerator {
             return false;
         }
 
-        if chess_move.is_king_side_castle() {
+        if chess_move.is_king_side_castling() {
             let leave_square = king_pos.by(-2, 0).unwrap();
             if self.can_be_attacked(leave_square, board, board.side_to_move()) {
                 return false;
@@ -210,7 +210,7 @@ impl MoveGenerator {
             }
         }
 
-        if chess_move.is_queen_side_castle() {
+        if chess_move.is_queen_side_castling() {
             let leave_square = king_pos.by(2, 0).unwrap();
             if self.can_be_attacked(leave_square, board, board.side_to_move()) {
                 return false;
@@ -628,12 +628,12 @@ impl MoveGenerator {
 
         let stm = board.side_to_move();
         if from == Square::king_initial(stm) {
-            self.generate_king_castle(board, buffer);
-            self.generate_queen_castle(board, buffer);
+            self.generate_king_castling(board, buffer);
+            self.generate_queen_castling(board, buffer);
         }
     }
 
-    fn generate_king_castle(
+    fn generate_king_castling(
         &self,
         board: &Board,
         buffer: &mut MoveBuffer,
@@ -659,10 +659,10 @@ impl MoveGenerator {
             return;
         }
 
-        buffer.add(Move::king_side_castle(Square::king_initial(stm), to));
+        buffer.add(Move::king_side_castling(Square::king_initial(stm), to));
     }
 
-    fn generate_queen_castle(
+    fn generate_queen_castling(
         &self,
         board: &Board,
         buffer: &mut MoveBuffer,
@@ -693,7 +693,7 @@ impl MoveGenerator {
             return;
         }
 
-        buffer.add(Move::queen_side_castle(Square::king_initial(stm), to));
+        buffer.add(Move::queen_side_castling(Square::king_initial(stm), to));
     }
 }
 
@@ -837,37 +837,37 @@ mod tests {
     }
 
     #[test]
-    fn king_side_castle() {
+    fn king_side_castling() {
         let buffer = generate(b"8/8/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1");
 
-        assert!(buffer.contains(Move::king_side_castle(e1, g1)));
+        assert!(buffer.contains(Move::king_side_castling(e1, g1)));
         assert_eq!(buffer.len(), 22);
 
         let buffer = generate(b"8/8/8/8/8/8/PPPPPPPP/RNBQK2R w Qkq - 0 1");
 
-        assert!(!buffer.contains(Move::king_side_castle(e1, g1)));
+        assert!(!buffer.contains(Move::king_side_castling(e1, g1)));
         assert_eq!(buffer.len(), 21);
 
         let buffer = generate(b"8/8/8/8/8/8/PPPPPPPP/RNBQK3 w KQkq - 0 1");
 
-        assert!(!buffer.contains(Move::king_side_castle(e1, g1)));
+        assert!(!buffer.contains(Move::king_side_castling(e1, g1)));
         assert_eq!(buffer.len(), 19);
     }
 
     #[test]
-    fn queen_side_castle() {
+    fn queen_side_castling() {
         let buffer = generate(b"8/8/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1");
-        assert!(buffer.contains(Move::queen_side_castle(e1, c1)));
+        assert!(buffer.contains(Move::queen_side_castling(e1, c1)));
 
-        for fen_no_castle in [
+        for fen_no_castling in [
             &b"8/8/8/8/8/8/PPPPPPPP/R3KBNR w Kkq - 0 1"[..],
             &b"8/8/8/8/8/8/PPPPPPPP/4KBNR w KQkq - 0 1"[..],
             &b"8/8/8/8/8/8/PPPPPPPP/RN2KBNR w KQkq - 0 1"[..],
             &b"8/8/8/8/8/8/PPPPPPPP/R1B1KBNR w KQkq - 0 1"[..],
             &b"8/8/8/8/8/8/PPPPPPPP/R2QKBNR w KQkq - 0 1"[..],
         ] {
-            let buffer = generate(fen_no_castle);
-            assert!(!buffer.contains(Move::queen_side_castle(e1, c1)));
+            let buffer = generate(fen_no_castling);
+            assert!(!buffer.contains(Move::queen_side_castling(e1, c1)));
         }
     }
 
@@ -1049,10 +1049,10 @@ mod tests {
     }
 
     #[test]
-    fn make_move_king_side_castle() {
+    fn make_move_king_side_castling() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+        let legal = movegen.make_move(&mut board, Move::king_side_castling(e1, g1));
 
         assert!(legal);
         assert_eq!(board.piece(e1), PieceNone);
@@ -1063,10 +1063,10 @@ mod tests {
     }
 
     #[test]
-    fn make_move_queen_side_castle() {
+    fn make_move_queen_side_castling() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+        let legal = movegen.make_move(&mut board, Move::queen_side_castling(e1, c1));
 
         assert!(legal);
         assert_eq!(board.piece(e1), PieceNone);
@@ -1117,49 +1117,49 @@ mod tests {
     }
 
     #[test]
-    fn make_move_legality_king_side_castle() {
+    fn make_move_legality_king_side_castling() {
         // Leave
         let mut board = Board::from_fen(b"4r3/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+        let legal = movegen.make_move(&mut board, Move::king_side_castling(e1, g1));
 
         assert!(!legal);
 
         // Cross
         let mut board = Board::from_fen(b"5r2/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+        let legal = movegen.make_move(&mut board, Move::king_side_castling(e1, g1));
 
         assert!(!legal);
 
         // End-up
         let mut board = Board::from_fen(b"6r1/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::king_side_castle(e1, g1));
+        let legal = movegen.make_move(&mut board, Move::king_side_castling(e1, g1));
 
         assert!(!legal);
     }
 
     #[test]
-    fn make_move_legality_queen_side_castle() {
+    fn make_move_legality_queen_side_castling() {
         // Leave
         let mut board = Board::from_fen(b"4r3/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+        let legal = movegen.make_move(&mut board, Move::queen_side_castling(e1, c1));
 
         assert!(!legal);
 
         // Cross
         let mut board = Board::from_fen(b"3r4/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+        let legal = movegen.make_move(&mut board, Move::queen_side_castling(e1, c1));
 
         assert!(!legal);
 
         // End-up
         let mut board = Board::from_fen(b"2r5/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let movegen = MoveGenerator::new();
-        let legal = movegen.make_move(&mut board, Move::queen_side_castle(e1, c1));
+        let legal = movegen.make_move(&mut board, Move::queen_side_castling(e1, c1));
 
         assert!(!legal);
     }
@@ -1167,7 +1167,7 @@ mod tests {
     #[test]
     fn make_move_king_move_resets_castling_rights() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-        let chess_move = Move::queen_side_castle(e1, c1);
+        let chess_move = Move::queen_side_castling(e1, c1);
 
         let movegen = MoveGenerator::new();
         let _legal = movegen.make_move(&mut board, chess_move);
@@ -1274,9 +1274,9 @@ mod tests {
     }
 
     #[test]
-    fn unmake_move_castle_moves_rook() {
+    fn unmake_move_castling_moves_rook() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-        let chess_move = Move::queen_side_castle(e1, c1);
+        let chess_move = Move::queen_side_castling(e1, c1);
 
         let movegen = MoveGenerator::new();
         let legal = movegen.make_move(&mut board, chess_move);
@@ -1289,7 +1289,7 @@ mod tests {
         assert_eq!(board.piece(c1), PieceNone);
         assert_eq!(board.piece(d1), PieceNone);
 
-        let chess_move = Move::king_side_castle(e1, g1);
+        let chess_move = Move::king_side_castling(e1, g1);
         let legal = movegen.make_move(&mut board, chess_move);
 
         assert!(legal);
@@ -1302,9 +1302,9 @@ mod tests {
     }
 
     #[test]
-    fn unmake_move_restores_castle_rights() {
+    fn unmake_move_restores_castling_rights() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-        let chess_move = Move::queen_side_castle(e1, c1);
+        let chess_move = Move::queen_side_castling(e1, c1);
 
         let movegen = MoveGenerator::new();
         let _legal = movegen.make_move(&mut board, chess_move);
@@ -1339,8 +1339,6 @@ mod tests {
     // un-make
     // - tests for multiple make-unmake (tests for undo structure)
     // - halfmove clock (50-moves rule)
-
-    // STYLE: castle / castling in codebase
 
     // make-unmake fuzzing
     // perft
