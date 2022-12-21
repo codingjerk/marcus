@@ -1271,7 +1271,7 @@ mod tests {
     }
 
     #[test]
-    fn unmake_move_restore_castle_rights() {
+    fn unmake_move_restores_castle_rights() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
         let chess_move = Move::queen_side_castle(e1, c1);
 
@@ -1284,7 +1284,7 @@ mod tests {
     }
 
     #[test]
-    fn unmake_move_restore_en_passant_captured_pawn() {
+    fn unmake_move_restores_en_passant_captured_pawn() {
         let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
         let movegen = MoveGenerator::new();
         let chess_move = Move::en_passant(f5, g6);
