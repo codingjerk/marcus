@@ -1337,10 +1337,6 @@ mod tests {
     }
 
     // un-make
-    // TODO: separate undo-structure ???
-    // var1: keep actual values on stack, copy to stack in make, pop stack in unmake
-    // var2: keep actual values in board, change in-place in make, restore from stack in unmake
-
     // - tests for multiple make-unmake (tests for undo structure)
     // - halfmove clock (50-moves rule)
 

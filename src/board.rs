@@ -21,8 +21,11 @@ pub struct Board {
     side_to_move: Color,
     halfmove_clock: HalfmoveClock,
 
-    // PERF: try different memory layouts (AoS vs SoA)
     // Undo stacks
+    // PERF: try different memory layouts (AoS vs SoA)
+    // PERF: try different stack models:
+    //       - keep actual values on stack, copy to stack in make, pop stack in unmake
+    //       - keep actual values in board, change in-place in make, restore from stack in unmake
     ply: Ply,
     castling_rights: [CastlingRights; UNDO_STACK_LENGTH],
     en_passant_file: [File; UNDO_STACK_LENGTH],
