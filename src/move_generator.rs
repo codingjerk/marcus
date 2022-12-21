@@ -1325,10 +1325,18 @@ mod tests {
         assert_eq!(board.piece(g5), BlackPawn);
     }
 
-    // un-make
-    // - en-passant square
-    //   - unmake move restores it
+    #[test]
+    fn unmake_move_restores_en_passant_square() {
+        let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
+        let movegen = MoveGenerator::new();
+        let chess_move = Move::en_passant(f5, g6);
+        let _legal = movegen.make_move(&mut board, Move::en_passant(f5, g6));
+        movegen.unmake_move(&mut board, chess_move);
 
+        assert_eq!(board.en_passant_file(), FileG);
+    }
+
+    // un-make
     // TODO: separate undo-structure ???
     // var1: keep actual values on stack, copy to stack in make, pop stack in unmake
     // var2: keep actual values in board, change in-place in make, restore from stack in unmake
