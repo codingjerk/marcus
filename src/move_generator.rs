@@ -128,6 +128,11 @@ impl MoveGenerator {
             board.unset_en_passant_file();
         }
 
+        // Halfmove clock
+        if chess_move.is_capture() {
+            board.reset_halfmove_clock();
+        }
+
         board.swap_side_to_move();
 
         self.was_legal(board, chess_move)
@@ -1218,7 +1223,19 @@ mod tests {
         let movegen = MoveGenerator::new();
         let _legal = movegen.make_move(&mut board, chess_move);
 
-        assert!(board.en_passant_file() == FileD);
+        assert_eq!(board.en_passant_file(), FileD);
+    }
+
+    #[test]
+    fn make_move_capture_resets_halfmove_clock() {
+        let mut board = Board::from_fen(b"1k2r3/8/8/8/4B3/8/2P5/5K2 b - - 13 1");
+        let chess_move = Move::capture(e8, e4, Bishop);
+        assert_eq!(board.halfmove_clock(), 13);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+
+        assert_eq!(board.halfmove_clock(), 0);
     }
 
     #[test]

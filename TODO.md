@@ -5,8 +5,10 @@
 ## WIP
 
 - [ ] Working unmake
-  - [ ] Undo structure test
   - [ ] Halfmove clock increase / reset / undo
+    - [ ] Pawn move
+    - [ ] Other moves
+  - [ ] Undo structure test
 
 - [ ] Make_move/unmake_move fuzzing
 - [ ] Perft

@@ -19,7 +19,6 @@ pub struct Board {
 
     // PERF: try to merge flags
     side_to_move: Color,
-    halfmove_clock: HalfmoveClock,
 
     // Undo stacks
     // PERF: try different memory layouts (AoS vs SoA)
@@ -29,6 +28,7 @@ pub struct Board {
     ply: Ply,
     castling_rights: [CastlingRights; UNDO_STACK_LENGTH],
     en_passant_file: [File; UNDO_STACK_LENGTH],
+    halfmove_clock: [HalfmoveClock; UNDO_STACK_LENGTH],
 }
 
 impl Board {
@@ -37,12 +37,12 @@ impl Board {
             // Basic structure
             squares: [PieceNone; 64],
             side_to_move: White,
-            halfmove_clock: 0,
 
             // Undo stacks
             ply: 0,
             castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
             en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
+            halfmove_clock: [0; UNDO_STACK_LENGTH],
         }
     }
 
@@ -56,7 +56,6 @@ impl Board {
         let mut result = Self {
             squares: [PieceNone; 64],
             side_to_move: unsafe { undefined() },
-            halfmove_clock: unsafe { undefined() },
 
             // Undo stacks
             ply: 0,
@@ -64,6 +63,7 @@ impl Board {
             // PERF: try use uninit
             castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
             en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
+            halfmove_clock: [0; UNDO_STACK_LENGTH],
         };
 
         let mut fen_index: u8 = 0;
@@ -165,7 +165,7 @@ impl Board {
         }
 
         // 5. Halfmove clock
-        result.halfmove_clock = 0;
+        // NOTE: halfmove_clock[0] is 0 already
         // PERF: unroll loop
         // PERF: use array with powers of 10
         loop {
@@ -179,10 +179,10 @@ impl Board {
             let digit = fen_char!();
             unsafe { always(b'0' <= digit && digit <= b'9') }
 
-            result.halfmove_clock *= 10;
+            result.halfmove_clock[0] *= 10;
             // NOTE: x & 0b1111 is equivalent to x - b'0' (if b'0' <= digit <= b'9')
             //       x ^ 0b110000 is the same thing for that range
-            result.halfmove_clock += (digit ^ 0b110000) as HalfmoveClock;
+            result.halfmove_clock[0] += (digit ^ 0b110000) as HalfmoveClock;
 
             fen_index += 1;
         }
@@ -213,7 +213,7 @@ impl Board {
     }
 
     pub const fn halfmove_clock(&self) -> HalfmoveClock {
-        self.halfmove_clock
+        self.halfmove_clock[self.ply]
     }
 
     // PERF: check if #[inline] works good here
@@ -268,7 +268,7 @@ impl Board {
 
         // 5. Halfmove clock
         let hmc = self.halfmove_clock();
-        unsafe { always(self.halfmove_clock <= MAX_HALFMOVE_CLOCK) }
+        unsafe { always(hmc <= MAX_HALFMOVE_CLOCK) }
 
         let x = (hmc / 100 % 10) as u8;
         let y = (hmc / 10 % 10) as u8;
@@ -320,7 +320,7 @@ impl Board {
         }
 
         // 5. Halfmove clock
-        result.halfmove_clock = rng.rand_range_u16(0, MAX_HALFMOVE_CLOCK);
+        result.halfmove_clock[0] = rng.rand_range_u16(0, MAX_HALFMOVE_CLOCK);
 
         // 6. Fullmove counter
         // NOTE: isn't needed
@@ -361,6 +361,7 @@ impl Board {
         unsafe { always(self.ply < UNDO_STACK_LENGTH) }
 
         self.castling_rights[self.ply] = self.castling_rights[prev_ply];
+        self.halfmove_clock[self.ply] = self.halfmove_clock[prev_ply];
     }
 
     pub fn pop_undo(&mut self) {
@@ -379,6 +380,15 @@ impl Board {
 
     pub fn unset_en_passant_file(&mut self) {
         self.set_en_passant_file(FileEnPassantNone);
+    }
+
+    pub fn reset_halfmove_clock(&mut self) {
+        self.halfmove_clock[self.ply] = 0;
+    }
+
+    pub fn increase_halfmove_clock(&mut self) {
+        // PERF: try to increase it in push_undo and just be no-op here
+        self.halfmove_clock[self.ply] += 1;
     }
 
     pub fn has_possible_pawn_structure(&self) -> bool {

@@ -145,6 +145,10 @@ impl Move {
     // TODO: consider passing moved dignity here
     //       to make sure it returns true only for king moves
     //       current implementation is too lose
+    pub fn is_capture(self) -> bool {
+        self.captured() != DignityNone
+    }
+
     pub fn is_pawn_double_move(self) -> bool {
         // NOTE: this function is only applicable for moves of pawn
         ( // White move
