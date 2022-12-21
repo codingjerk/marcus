@@ -6,7 +6,6 @@
 
 - [ ] Working unmake
   - [ ] Halfmove clock increase / reset / undo
-    - [ ] Pawn move
     - [ ] Other moves
   - [ ] Undo structure test
 

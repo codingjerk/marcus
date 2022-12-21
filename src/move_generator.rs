@@ -129,7 +129,7 @@ impl MoveGenerator {
         }
 
         // Halfmove clock
-        if chess_move.is_capture() {
+        if chess_move.is_capture() || piece.dignity() == Pawn {
             board.reset_halfmove_clock();
         }
 
@@ -1231,6 +1231,18 @@ mod tests {
         let mut board = Board::from_fen(b"1k2r3/8/8/8/4B3/8/2P5/5K2 b - - 13 1");
         let chess_move = Move::capture(e8, e4, Bishop);
         assert_eq!(board.halfmove_clock(), 13);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+
+        assert_eq!(board.halfmove_clock(), 0);
+    }
+
+    #[test]
+    fn make_move_pawn_move_resets_halfmove_clock() {
+        let mut board = Board::from_fen(b"1k2r3/8/8/8/4B3/8/2P5/5K2 b - - 15 1");
+        let chess_move = Move::pawn_single(c2, c3);
+        assert_eq!(board.halfmove_clock(), 15);
 
         let movegen = MoveGenerator::new();
         let _legal = movegen.make_move(&mut board, chess_move);
