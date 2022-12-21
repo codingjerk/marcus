@@ -1335,11 +1335,4 @@ mod tests {
 
         assert_eq!(board.en_passant_file(), FileG);
     }
-
-    // un-make
-    // - tests for multiple make-unmake (tests for undo structure)
-    // - halfmove clock (50-moves rule)
-
-    // make-unmake fuzzing
-    // perft
 }
