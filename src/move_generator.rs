@@ -63,8 +63,10 @@ impl MoveGenerator {
             }
         };
 
-        if chess_move.captured() == Pawn && piece.dignity() == Pawn &&
-           Some(chess_move.to()) == ep_to {
+        if chess_move.captured() == Pawn
+           && piece.dignity() == Pawn
+           && Some(chess_move.to()) == ep_to
+        {
             board.remove_piece(ep_to.unwrap().forward(opp_color, 1));
         } else if chess_move.captured() != DignityNone {
             unsafe {
@@ -1205,7 +1207,7 @@ mod tests {
         let movegen = MoveGenerator::new();
         let _legal = movegen.make_move(&mut board, chess_move);
 
-        assert!(board.en_passant_file() == FileEnPassantNone);
+        assert_eq!(board.en_passant_file(), FileEnPassantNone);
     }
 
     #[test]
