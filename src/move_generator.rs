@@ -97,6 +97,8 @@ impl MoveGenerator {
         // PERF: try to collect disallow mask first, then do
         //       board.push_castling_rights(disallow_mask)
         board.push_undo();
+
+        // Castling checks
         if piece.dignity() == King {
             board.disallow_castling(CastlingRights::both(stm));
         }
@@ -115,6 +117,13 @@ impl MoveGenerator {
 
         if chess_move.captured() == Rook && chess_move.to().file() == FileH {
             board.disallow_castling(CastlingRights::king_side(opp_color));
+        }
+
+        // En-passant checks
+        if piece.dignity() == Pawn && chess_move.is_pawn_double_move() {
+            board.set_en_passant_file(chess_move.from().file());
+        } else {
+            board.unset_en_passant_file();
         }
 
         board.swap_side_to_move();
@@ -1189,6 +1198,28 @@ mod tests {
     }
 
     #[test]
+    fn make_move_resets_en_passant_square() {
+        let mut board = Board::from_fen(b"rnbqkbnr/8/8/8/8/8/8/R3K2R b KQkq e3 0 1");
+        let chess_move = Move::capture(h8, h1, Rook);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(board.en_passant_file() == FileEnPassantNone);
+    }
+
+    #[test]
+    fn make_move_double_pawn_sets_en_passant_square() {
+        let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let chess_move = Move::pawn_double(d2, d4);
+
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+
+        assert!(board.en_passant_file() == FileD);
+    }
+
+    #[test]
     fn unmake_move_restores_side_to_move() {
         let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R3K3 w KQkq - 0 1");
         let chess_move = Move::quiet(a1, c1);
@@ -1296,8 +1327,7 @@ mod tests {
 
     // un-make
     // - en-passant square
-    //   - every move resets it
-    //   - pawn double sets it
+    //   - unmake move restores it
 
     // TODO: separate undo-structure ???
     // var1: keep actual values on stack, copy to stack in make, pop stack in unmake

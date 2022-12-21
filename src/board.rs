@@ -25,7 +25,7 @@ pub struct Board {
     // Undo stacks
     ply: Ply,
     castling_rights: [CastlingRights; UNDO_STACK_LENGTH],
-    en_passant_file: File,
+    en_passant_file: [File; UNDO_STACK_LENGTH],
 }
 
 impl Board {
@@ -39,7 +39,7 @@ impl Board {
             // Undo stacks
             ply: 0,
             castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
-            en_passant_file: FileEnPassantNone,
+            en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
         }
     }
 
@@ -57,8 +57,10 @@ impl Board {
 
             // Undo stacks
             ply: 0,
+
+            // PERF: try use uninit
             castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
-            en_passant_file: unsafe { undefined() },
+            en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
         };
 
         let mut fen_index: u8 = 0;
@@ -121,7 +123,7 @@ impl Board {
         skip_char!(b' ');
 
         // 3. Castling rights
-        result.castling_rights[0].unset();
+        // NOTE: castling_rights[0] is already None
         loop {
             match fen_char!() {
                 b' ' => {
@@ -143,11 +145,11 @@ impl Board {
 
         // 4. En passant target square
         if fen_char!() == b'-' {
-            result.en_passant_file = FileEnPassantNone;
+            // NOTE: en_passant_file[0] is already None
             fen_index += 1;
             skip_char!(b' ');
         } else {
-            result.en_passant_file = File::from_fen(fen_char!());
+            result.en_passant_file[0] = File::from_fen(fen_char!());
             fen_index += 1;
 
             if result.side_to_move == White {
@@ -204,7 +206,7 @@ impl Board {
     }
 
     pub const fn en_passant_file(&self) -> File {
-        self.en_passant_file
+        self.en_passant_file[self.ply]
     }
 
     pub const fn halfmove_clock(&self) -> HalfmoveClock {
@@ -311,7 +313,7 @@ impl Board {
 
         // 4. En passant target square
         if rng.rand_bool() {
-            result.en_passant_file = File::rand(rng);
+            result.en_passant_file[0] = File::rand(rng);
         }
 
         // 5. Halfmove clock
@@ -366,6 +368,14 @@ impl Board {
 
     pub fn disallow_castling(&mut self, rights: CastlingRights) {
         self.castling_rights[self.ply].disallow(rights);
+    }
+
+    pub fn set_en_passant_file(&mut self, file: File) {
+        self.en_passant_file[self.ply] = file;
+    }
+
+    pub fn unset_en_passant_file(&mut self) {
+        self.set_en_passant_file(FileEnPassantNone);
     }
 
     pub fn has_possible_pawn_structure(&self) -> bool {

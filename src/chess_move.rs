@@ -145,6 +145,17 @@ impl Move {
     // TODO: consider passing moved dignity here
     //       to make sure it returns true only for king moves
     //       current implementation is too lose
+    pub fn is_pawn_double_move(self) -> bool {
+        // NOTE: this function is only applicable for moves of pawn
+        ( // White move
+            (self.from().rank() == Rank2) &&
+            (self.to().rank() == Rank4)
+        ) || ( // Black move
+            (self.from().rank() == Rank7) &&
+            (self.to().rank() == Rank5)
+        )
+    }
+
     pub fn is_king_side_castle(self) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileG)
