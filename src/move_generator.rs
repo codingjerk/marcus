@@ -1380,4 +1380,15 @@ mod tests {
 
         assert_eq!(board.en_passant_file(), FileG);
     }
+
+    #[test]
+    fn unmake_move_restores_halfmove_clock() {
+        let mut board = Board::from_fen(b"1k2r3/8/8/8/4B3/8/2P5/5K2 b - - 13 1");
+        let chess_move = Move::capture(e8, e4, Bishop);
+        let movegen = MoveGenerator::new();
+        let _legal = movegen.make_move(&mut board, chess_move);
+        movegen.unmake_move(&mut board, chess_move);
+
+        assert_eq!(board.halfmove_clock(), 13);
+    }
 }

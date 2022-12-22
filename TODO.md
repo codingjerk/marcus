@@ -5,8 +5,6 @@
 ## WIP
 
 - [ ] Working unmake
-  - [ ] Halfmove clock increase / reset / undo
-    - [ ] Other moves
   - [ ] Undo structure test
 
 - [ ] Make_move/unmake_move fuzzing
