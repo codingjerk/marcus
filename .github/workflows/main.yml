@@ -33,7 +33,7 @@ jobs:
           toolchain: nightly
           default: true
       - name: Install dependencies
-        run: cargo install tarapaulin
+        run: cargo install cargo-tarpaulin
       - name: Cleanup
         run: cargo clean
       - name: Measure
