@@ -1,5 +1,7 @@
 # Marcus
 
+![Pipeline status](https://img.shields.io/github/actions/workflow/status/codingjerk/marcus/main.yml?style=flat-square)
+
 > Blazing fast UCI chess engine
 
 ## Philosophy

@@ -11,15 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            /usr/share/rust
-            ~/.cargo
-            ~/.rustup
-            target
-          key: ${{ github.job }}
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -29,6 +20,12 @@ jobs:
         run: cargo test
       - name: Bench
         run: cargo bench
+      - name: Measure coverage
+        uses: actions-rs/tarpaulin@v0.1
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
 
   build:
     name: Build
@@ -42,15 +39,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            /usr/share/rust
-            ~/.cargo
-            ~/.rustup
-            target
-          key: ${{ github.job }}-${{ matrix.name }}
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:

@@ -5,13 +5,16 @@
 ## WIP
 
 - [ ] README
-- [ ] Open github repo
+- [ ] Badges
+- [ ] Release generation
 
 - [ ] Perft
+- [ ] Configurable statistics module (features)
+- [ ] TODOs / Refactor
+
+- [ ] Advanced perft
   - [ ] Hash perft
   - [ ] Parallel perft
-- [ ] Configurable statistics module
-- [ ] TODOs / Refactor
 
 ## Big parts
 
