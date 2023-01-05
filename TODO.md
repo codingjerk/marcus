@@ -4,12 +4,22 @@
 
 ## WIP
 
-- [ ] Working unmake
-  - [ ] Undo structure test
+- [ ] README
+- [ ] Open github repo
 
-- [ ] Make_move/unmake_move fuzzing
 - [ ] Perft
+  - [ ] Hash perft
+  - [ ] Parallel perft
+- [ ] Configurable statistics module
+- [ ] TODOs / Refactor
 
 ## Big parts
 
 - [ ] Bitboard move generator
+- [ ] Evaluation
+  - [ ] Lazy evaluation
+- [ ] Search
+  - [ ] Randomization
+  - [ ] Insufficient material
+- [ ] Lichess bot
+- [ ] UCI

@@ -207,7 +207,8 @@ impl MoveGenerator {
             return false;
         }
 
-        if chess_move.is_king_side_castling() {
+        let moved_piece = board.piece(chess_move.to());
+        if moved_piece == king && chess_move.is_king_side_castling() {
             let leave_square = king_pos.by(-2, 0).unwrap();
             if self.can_be_attacked(leave_square, board, board.side_to_move()) {
                 return false;
@@ -219,7 +220,7 @@ impl MoveGenerator {
             }
         }
 
-        if chess_move.is_queen_side_castling() {
+        if moved_piece == king && chess_move.is_queen_side_castling() {
             let leave_square = king_pos.by(2, 0).unwrap();
             if self.can_be_attacked(leave_square, board, board.side_to_move()) {
                 return false;
@@ -244,18 +245,18 @@ impl MoveGenerator {
         let target_side = side_to_move.swapped();
 
         // Left pawn attack
-        if let Some(attacker) = target.forward(target_side, 1).by(1, 0) {
+        if let Some(attacker) = target.left_pawn_attack(target_side) {
             if board.piece(attacker) == pawn {
                 return true;
             }
-        };
+        }
 
         // Right pawn attack
-        if let Some(attacker) = target.forward(target_side, 1).by(-1, 0) {
+        if let Some(attacker) = target.right_pawn_attack(target_side) {
             if board.piece(attacker) == pawn {
                 return true;
             }
-        };
+        }
 
         // Knight attacks
         let knight = Piece::new(side_to_move, Knight);
@@ -1014,7 +1015,8 @@ mod tests {
             buffer.reset();
 
             if !board.has_possible_pawn_structure() ||
-               !board.has_possible_en_passant_square()
+               !board.has_possible_en_passant_square() ||
+               !board.has_possible_kings_setup()
             {
                 continue;
             }
@@ -1390,5 +1392,33 @@ mod tests {
         movegen.unmake_move(&mut board, chess_move);
 
         assert_eq!(board.halfmove_clock(), 13);
+    }
+
+    #[test]
+    fn fuzz_make_unmake() {
+        let mut rng = FastRng::from_system_time();
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        for i in 0..(11_010 * FUZZ_MULTIPLIER) {
+            let mut board = Board::rand(&mut rng);
+            buffer.reset();
+
+            if !board.has_possible_pawn_structure() ||
+               !board.has_possible_en_passant_square() ||
+               !board.has_possible_kings_setup()
+            {
+                continue;
+            }
+
+            movegen.generate(&board, &mut buffer);
+
+            // TODO: use iterator
+            for i in 0..buffer.len() {
+                let chess_move = buffer.get(i);
+                let _legal = movegen.make_move(&mut board, chess_move);
+                movegen.unmake_move(&mut board, chess_move);
+            }
+        }
     }
 }

@@ -1,1 +1,1 @@
-pub const FUZZ_MULTIPLIER: usize = 1;
+pub const FUZZ_MULTIPLIER: usize = 1000;

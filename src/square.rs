@@ -101,16 +101,52 @@ impl Square {
 
     // Moves black pieces toward rank 1
     // And white pieces toward rank 8
+    pub const fn try_forward(
+        self,
+        side_to_move: Color,
+        by: SquareInner,
+    ) -> Option<Self> {
+        unsafe {
+            always(by <= 127);
+        }
+
+        let by = by as i8;
+
+        match side_to_move {
+            Black => self.by(0, -by),
+            White => self.by(0, by),
+            _ => unsafe { unreachable() },
+        }
+    }
+
+    // PERF: check if it's as fast as version without try
     pub const fn forward(
         self,
         side_to_move: Color,
         by: SquareInner,
     ) -> Self {
-        match side_to_move {
-            Black => self.down(by),
-            White => self.up(by),
+        let result = self.try_forward(side_to_move, by);
+
+        match result {
+            Some(square) => square,
             _ => unsafe { unreachable() },
         }
+    }
+
+    pub fn left_pawn_attack(
+        self,
+        side_to_move: Color,
+    ) -> Option<Self> {
+        self.try_forward(side_to_move, 1)?
+            .by(1, 0)
+    }
+
+    pub fn right_pawn_attack(
+        self,
+        side_to_move: Color,
+    ) -> Option<Self> {
+        self.try_forward(side_to_move, 1)?
+            .by(-1, 0)
     }
 
     pub fn move_right_unchecked(&mut self, by: SquareInner) {

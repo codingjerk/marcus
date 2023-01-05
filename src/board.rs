@@ -423,7 +423,28 @@ impl Board {
             return false;
         }
 
+        let opp_color = self.side_to_move().swapped();
+        let ep_victim = ep_square.forward(opp_color, 1);
+        if self.piece(ep_victim) != Piece::new(opp_color, Pawn) {
+            return false;
+        }
+
         true
+    }
+
+    pub fn has_possible_kings_setup(&self) -> bool {
+        let mut white_kings = 0;
+        let mut black_kings = 0;
+
+        for square in self.squares {
+            match square {
+                x if x == BlackKing => black_kings += 1,
+                x if x == WhiteKing => white_kings += 1,
+                _ => {},
+            }
+        }
+
+        white_kings == 1 && black_kings == 1
     }
 }
 
