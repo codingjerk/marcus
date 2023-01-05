@@ -34,6 +34,7 @@ jobs:
         with:
           files: ${{ steps.coverage.outputs.report }}
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
 
   build:
     name: Build
