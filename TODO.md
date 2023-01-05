@@ -4,9 +4,6 @@
 
 ## WIP
 
-- [ ] Release generation
-  - [ ] Changelog
-
 - [ ] Perft
 - [ ] Configurable statistics module (features)
 - [ ] TODOs / Refactor
