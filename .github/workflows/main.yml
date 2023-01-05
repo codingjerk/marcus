@@ -16,16 +16,24 @@ jobs:
         with:
           toolchain: nightly
           default: true
-      - name: Test
-        run: cargo test
       - name: Bench
         run: cargo bench
-      - name: Measure coverage
-        uses: actions-rs/tarpaulin@latest
+      - name: Cleanup  # Necessary for coverage
+        run: cargo clean
+      - name: Test
+        run: cargo test
+        env:
+          CARGO_INCREMENTAL: '0'
+          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+      - name: Generate coverage
+        id: coverage
+        uses: actions-rs/grcov@v0.1
       - name: Upload coverage
-        uses: codecov/codecov-action@v1.0.2
+        uses: codecov/codecov-action@v3
         with:
-          token: ${{secrets.CODECOV_TOKEN}}
+          files: ${{ steps.coverage.outputs.report }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: Build

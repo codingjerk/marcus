@@ -1,6 +1,7 @@
 # Marcus
 
 ![Pipeline status](https://img.shields.io/github/actions/workflow/status/codingjerk/marcus/main.yml?style=flat-square)
+![Code coverage](https://img.shields.io/codecov/c/github/codingjerk/marcus?style=flat-square)
 
 > Blazing fast UCI chess engine
 

@@ -7,6 +7,10 @@
 - [ ] README
 - [ ] Badges
 - [ ] Release generation
+  - [ ] Changelog
+  - [ ] Benchmarks
+  - [ ] Coverage
+  - [ ] ELO score
 
 - [ ] Perft
 - [ ] Configurable statistics module (features)
