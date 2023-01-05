@@ -119,12 +119,16 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: ~/artifacts/
+      - name: Debug
+        run: |
+          git log
+          git branch
       - name: Generate changelog
         id: git-cliff
         uses: orhun/git-cliff-action@v2
         with:
           config: cliff.toml
-          args: --latest --unreleased
+          args: --verbose --unreleased --latest
         env:
           OUTPUT: CHANGELOG.md
       - name: Upload changelog
