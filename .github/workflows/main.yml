@@ -119,6 +119,19 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: ~/artifacts/
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v2
+        with:
+          config: cliff.toml
+          args: --verbose --latest --unreleased
+        env:
+          OUTPUT: CHANGELOG.md
+      - name: Upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: CHANGELOG.md
+          path: CHANGELOG.md
+          if-no-files-found: error
       - name: Combine release notes
         run: |
           echo "### Downloads" >> notes.txt
