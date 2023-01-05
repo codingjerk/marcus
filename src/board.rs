@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use std::fmt;
 
 type HalfmoveClock = u16; // PERF: try smaller and bigger types
 type Ply = usize; // PERF: try smaller and bigger types
@@ -11,7 +12,7 @@ const MAX_FEN_SIZE: usize = 90;
 const UNDO_STACK_LENGTH: usize = 100;
 
 // TODO: move to board/mailbox8x8
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Board {
     // PERF: try two arrays for dignities instead
     //       try to remove it from bitboard representation
@@ -423,6 +424,33 @@ impl Board {
         }
 
         true
+    }
+}
+
+impl fmt::Debug for Board {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for rank in Rank::top_to_bottom() {
+            write!(f, " {} |", rank.fen() as char)?;
+
+            for file in File::a_to_h() {
+                let square = Square::from_file_rank(file, rank);
+                let piece = self.squares[square.index() as usize];
+
+                if piece == PieceNone {
+                    write!(f, " . ")?;
+                    continue;
+                }
+
+                write!(f, " {} ", piece.fen() as char)?;
+            }
+
+            writeln!(f)?;
+        }
+
+        writeln!(f, "     -  -  -  -  -  -  -  -")?;
+        write!(f, "     a  b  c  d  e  f  g  h")?;
+
+        Ok(())
     }
 }
 
