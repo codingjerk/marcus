@@ -93,7 +93,6 @@ impl Piece {
     }
 
     #[inline]
-    #[allow(const_err)]
     pub const fn from_fen(fen: u8) -> Self {
         // Bit structure of input (fen char)
         // NOTE: works for ASCII encoding only
@@ -133,7 +132,6 @@ impl Piece {
     }
 
     #[inline]
-    #[allow(const_err)]
     pub const fn fen(self) -> u8 {
         const PIECE_TO_FEN: [u8; PieceMax.index() as usize + 1] = {
             let mut xs = [0; _];
