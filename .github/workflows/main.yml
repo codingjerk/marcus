@@ -32,6 +32,7 @@ jobs:
         with:
           toolchain: nightly
           default: true
+      - name: Install dependencies
         run: cargo install tarapaulin
       - name: Cleanup
         run: cargo clean
