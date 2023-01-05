@@ -18,12 +18,15 @@ jobs:
           default: true
       - name: Bench
         run: cargo bench
-      - name: Cleanup  # Necessary for coverage
-        run: cargo clean
       - name: Test
         run: cargo test
+      - name: Cleanup  # Necessary for coverage
+        run: cargo clean
       - name: Measure coverage
         uses: actions-rs/tarpaulin@latest
+        with:
+          version: '0.23.1'
+          args: '-- --test-threads 1'
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
