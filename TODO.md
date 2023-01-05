@@ -6,10 +6,6 @@
 
 - [ ] Release generation
   - [ ] Changelog
-  - [ ] Benchmarks
-  - [ ] Coverage
-  - [ ] ELO score
-  - [ ] Macos Release
 
 - [ ] Perft
 - [ ] Configurable statistics module (features)
@@ -29,3 +25,5 @@
   - [ ] Insufficient material
 - [ ] Lichess bot
 - [ ] UCI
+- [ ] Release score
+  - [ ] Benchmarks

@@ -120,17 +120,18 @@ jobs:
         with:
           path: ~/artifacts/
       - name: Generate changelog
+        id: git-cliff
         uses: orhun/git-cliff-action@v2
         with:
           config: cliff.toml
-          args: --verbose --latest --unreleased
+          args: --latest --unreleased
         env:
           OUTPUT: CHANGELOG.md
       - name: Upload changelog
         uses: actions/upload-artifact@v2
         with:
           name: CHANGELOG.md
-          path: CHANGELOG.md
+          path: "${{ steps.git-cliff.outputs.changelog }}"
           if-no-files-found: error
       - name: Combine release notes
         run: |
@@ -140,10 +141,8 @@ jobs:
           echo "- [MacOS (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_macos_aarch64)" >> notes.txt
           echo "- [MacOS (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_macos_x86_64)" >> notes.txt
           echo "- [Windows (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_windows_x86_64.exe)" >> notes.txt
-          echo "### Score" >> notes.txt
-          echo "Currently no scores are calculated automatically" >> notes.txt
           echo "### Changelog" >> notes.txt
-          echo "Currently changelog doesn't generate automatically" >> notes.txt
+          cat "${{ steps.git-cliff.outputs.changelog }}" >> notes.txt
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
