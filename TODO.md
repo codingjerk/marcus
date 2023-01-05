@@ -4,8 +4,6 @@
 
 ## WIP
 
-- [ ] README
-- [ ] Badges
 - [ ] Release generation
   - [ ] Changelog
   - [ ] Benchmarks
