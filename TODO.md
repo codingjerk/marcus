@@ -9,6 +9,7 @@
   - [ ] Benchmarks
   - [ ] Coverage
   - [ ] ELO score
+  - [ ] Macos Release
 
 - [ ] Perft
 - [ ] Configurable statistics module (features)

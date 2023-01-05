@@ -61,12 +61,42 @@ jobs:
         with:
           toolchain: nightly
           default: true
+          override: true
       - name: Install dependencies
         run: |
           cargo install cross
           rustup target add ${{ matrix.target }}
       - name: Build
         run: cross build --release --target=${{ matrix.target }}
+      - name: Rename artifact
+        run: mv target/${{ matrix.target }}/release/${{ matrix.src_file_name }} ${{ matrix.dst_file_name }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.dst_file_name }}
+          if-no-files-found: error
+
+  build_macos:
+    name: Build (MacOS)
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin, name: marcus_macos_aarch64, src_file_name: marcus, dst_file_name: marcus_macos_aarch64 }
+          - { target: x86_64-apple-darwin, name: marcus_macos_x86_64, src_file_name: marcus, dst_file_name: marcus_macos_x86_64 }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+          default: true
+          override: true
+      - name: Build
+        run: cargo build --release --target=${{ matrix.target }}
       - name: Rename artifact
         run: mv target/${{ matrix.target }}/release/${{ matrix.src_file_name }} ${{ matrix.dst_file_name }}
       - name: Upload artifact
@@ -94,6 +124,8 @@ jobs:
           echo "### Downloads" >> notes.txt
           echo "- [Android (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_android_aarch64)" >> notes.txt
           echo "- [Linux (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_linux_x86_64)" >> notes.txt
+          echo "- [MacOS (aarch64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_macos_aarch64)" >> notes.txt
+          echo "- [MacOS (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_macos_x86_64)" >> notes.txt
           echo "- [Windows (x86_64)](https://github.com/codingjerk/marcus/releases/download/v${{ github.run_number }}/marcus_windows_x86_64.exe)" >> notes.txt
           echo "### Score" >> notes.txt
           echo "Currently no scores are calculated automatically" >> notes.txt
