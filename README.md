@@ -1,13 +1,13 @@
 # Marcus
 
-![Pipeline status](https://img.shields.io/github/actions/workflow/status/codingjerk/marcus/main.yml?style=flat-square)
-![Code coverage](https://img.shields.io/codecov/c/github/codingjerk/marcus?style=flat-square)
+[![Pipeline status](https://img.shields.io/github/actions/workflow/status/codingjerk/marcus/main.yml?style=flat-square)](https://github.com/codingjerk/marcus/actions)
+[![Code coverage](https://img.shields.io/codecov/c/github/codingjerk/marcus?style=flat-square)](https://app.codecov.io/gh/codingjerk/marcus)
 ![Main language](https://img.shields.io/github/languages/top/codingjerk/marcus?style=flat-square)
 ![Unsafe count](https://img.shields.io/github/search/codingjerk/marcus/unsafe?label=unsafe%20count&style=flat-square)
 ![Lines count](https://img.shields.io/tokei/lines/github/codingjerk/marcus?style=flat-square)
-![Issues](https://img.shields.io/github/issues/codingjerk/marcus?style=flat-square)
-![License](https://img.shields.io/github/license/codingjerk/marcus?style=flat-square)
-![Release](https://img.shields.io/github/v/release/codingjerk/marcus?include_prereleases&style=flat-square)
+[![Issues](https://img.shields.io/github/issues/codingjerk/marcus?style=flat-square)](https://github.com/codingjerk/marcus/issues)
+[![License](https://img.shields.io/github/license/codingjerk/marcus?style=flat-square)](https://github.com/codingjerk/marcus/blob/master/LICENSE.md)
+[![Release](https://img.shields.io/github/v/release/codingjerk/marcus?include_prereleases&style=flat-square)](https://github.com/codingjerk/marcus/releases)
 
 > Blazing fast UCI chess engine
 
