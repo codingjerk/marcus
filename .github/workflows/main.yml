@@ -22,17 +22,11 @@ jobs:
         run: cargo clean
       - name: Test
         run: cargo test
-        env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-      - name: Generate coverage
-        id: coverage
-        uses: actions-rs/grcov@v0.1
+      - name: Measure coverage
+        uses: actions-rs/tarpaulin@latest
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          files: ${{ steps.coverage.outputs.report }}
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
