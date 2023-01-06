@@ -29,6 +29,16 @@ impl Color {
     }
 
     #[inline]
+    pub const fn start_rank(self) -> Rank {
+        match self {
+            Black => Rank8,
+            White => Rank1,
+
+            _ => unsafe { unreachable() },
+        }
+    }
+
+    #[inline]
     pub const fn fen(self) -> u8 {
         match self {
             Black => b'b',

@@ -101,8 +101,8 @@ mod tests {
             (6, 1, fen),
             (264, 2, fen),
             (9_467, 3, fen),
-            // (422_333, 4, fen),
-            // (15_833_292, 5, fen),
+            (422_333, 4, fen),
+            (15_833_292, 5, fen),
         ] {
             assert_eq!(perft(fen, depth), result);
         }

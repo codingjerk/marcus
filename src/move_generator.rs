@@ -113,11 +113,15 @@ impl MoveGenerator {
             board.disallow_castling(CastlingRights::king_side(stm));
         }
 
-        if chess_move.captured() == Rook && chess_move.to().file() == FileA {
+        if chess_move.captured() == Rook &&
+           chess_move.to().file() == FileA &&
+           chess_move.to().rank() == opp_color.start_rank() {
             board.disallow_castling(CastlingRights::queen_side(opp_color));
         }
 
-        if chess_move.captured() == Rook && chess_move.to().file() == FileH {
+        if chess_move.captured() == Rook &&
+           chess_move.to().file() == FileH &&
+           chess_move.to().rank() == opp_color.start_rank() {
             board.disallow_castling(CastlingRights::king_side(opp_color));
         }
 
