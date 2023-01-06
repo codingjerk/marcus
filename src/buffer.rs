@@ -56,8 +56,12 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         false
     }
 
+    pub fn restore_cursor(&mut self, value: usize) {
+        self.cursor = value;
+    }
+
     pub fn reset(&mut self) {
-        self.cursor = 0;
+        self.restore_cursor(0);
     }
 }
 

@@ -21,6 +21,7 @@ mod chess_move;
 mod color;
 mod hint;
 mod move_generator;
+mod perft;
 mod piece;
 mod prelude;
 mod rand;

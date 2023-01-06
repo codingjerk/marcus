@@ -3,7 +3,7 @@ use crate::prelude::*;
 // TODO: calculate
 const MAX_MOVE_BUFFER_SIZE: usize = 500;
 
-type MoveBuffer = StaticBuffer<Move, MAX_MOVE_BUFFER_SIZE>;
+pub type MoveBuffer = StaticBuffer<Move, MAX_MOVE_BUFFER_SIZE>;
 
 // TODO: move to mailbox8x8
 pub struct MoveGenerator;
@@ -1397,6 +1397,7 @@ mod tests {
     #[test]
     fn fuzz_make_unmake() {
         let mut rng = FastRng::from_system_time();
+        // STYLE: rename to move_gen or move_generator
         let movegen = MoveGenerator::new();
         let mut buffer = MoveBuffer::new();
 
