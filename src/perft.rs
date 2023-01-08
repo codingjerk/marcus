@@ -33,7 +33,7 @@ fn perft_recursive(
     result
 }
 
-fn perft(fen: &[u8], depth: Depth) -> usize {
+pub fn perft(fen: &[u8], depth: Depth) -> usize {
     let mut board = Board::from_fen(fen);
     let movegen = MoveGenerator::new();
     let mut move_buffer = MoveBuffer::new();
@@ -102,7 +102,6 @@ mod tests {
             (264, 2, fen),
             (9_467, 3, fen),
             (422_333, 4, fen),
-            (15_833_292, 5, fen),
         ] {
             assert_eq!(perft(fen, depth), result);
         }

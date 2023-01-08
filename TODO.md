@@ -4,8 +4,6 @@
 
 ## WIP
 
-- [ ] Perft
-- [ ] Configurable statistics module (features)
 - [ ] TODOs / Refactor
 
 - [ ] Advanced perft
@@ -24,3 +22,4 @@
 - [ ] UCI
 - [ ] Release score
   - [ ] Benchmarks
+- [ ] Configurable statistics module (features)
