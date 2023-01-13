@@ -8,8 +8,7 @@ pub struct StaticBuffer<E, const SIZE: usize> {
 }
 
 impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
-    // PERF: try to add inline attribute to all small functions
-    #[inline]
+    #[inline(always)]
     pub const fn new() -> Self {
         Self {
             // SAFETY
@@ -22,12 +21,12 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn len(&self) -> usize {
         self.cursor
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn get(&self, index: usize) -> E
         where E: Copy
     {
@@ -36,7 +35,7 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         self.data[index]
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn add(&mut self, value: E) {
         always!(self.cursor < SIZE);
 
@@ -44,12 +43,12 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         self.cursor += 1;
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn as_slice(&self) -> &[E] {
         return &self.data[..self.cursor];
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn contains(&self, expected: E) -> bool
         where E: PartialEq
     {
@@ -62,12 +61,12 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         false
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn restore_cursor(&mut self, value: usize) {
         self.cursor = value;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn reset(&mut self) {
         self.restore_cursor(0);
     }

@@ -234,7 +234,6 @@ impl Board {
         self.halfmove_clock[self.ply]
     }
 
-    // PERF: check if #[inline] works good here
     #[inline(always)]
     pub fn fen(&self, buffer: &mut StaticBuffer<u8, MAX_FEN_SIZE>) {
         // 1. Position

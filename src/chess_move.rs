@@ -24,7 +24,7 @@ impl Move {
     pub const EnPassantSpecial: MoveInner = 0b1000000000000000000;
 
     // PERF: try to store Piece instead of Dignity
-    #[inline]
+    #[inline(always)]
     pub const fn new(
         from: Square,
         to: Square,
@@ -45,19 +45,19 @@ impl Move {
         Self(bits)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn capture(from: Square, to: Square, captured: Dignity) -> Self {
         always!(captured != DignityNone);
 
         Self::new(from, to, captured, DignityNone, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn quiet(from: Square, to: Square) -> Self {
         Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn pawn_single(from: Square, to: Square) -> Self {
         always!(from.rank().index() >= Rank2.index());
         always!(from.rank().index() <= Rank7.index());
@@ -65,14 +65,14 @@ impl Move {
         Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn pawn_double(from: Square, to: Square) -> Self {
         always!(from.rank() == Rank2 || from.rank() == Rank7);
 
         Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn en_passant(from: Square, to: Square) -> Self {
         always!(
             (from.rank() == Rank4 && to.rank() == Rank3) ||
@@ -82,7 +82,7 @@ impl Move {
         Self::new(from, to, Pawn, DignityNone, 1)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn promotion(from: Square, to: Square, promoted: Dignity) -> Self {
         always!(
             (from.rank() == Rank2 && to.rank() == Rank1) ||
@@ -93,7 +93,7 @@ impl Move {
         Self::new(from, to, DignityNone, promoted, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn promotion_capture(
         from: Square,
         to: Square,
@@ -110,7 +110,7 @@ impl Move {
         Self::new(from, to, captured, promoted, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn king_side_castling(
         from: Square,
         to: Square,
@@ -121,7 +121,7 @@ impl Move {
         Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn queen_side_castling(
         from: Square,
         to: Square,
@@ -132,45 +132,45 @@ impl Move {
         Self::new(from, to, DignityNone, DignityNone, 0)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn from(self) -> Square {
         let index = (self.0 as SquareInner) & Square::Mask;
 
         Square::from_index(index)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn to(self) -> Square {
         let index = ((self.0 >> 6) as SquareInner) & Square::Mask;
 
         Square::from_index(index)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn captured(self) -> Dignity {
         let index = ((self.0 >> 12) as DignityInner) & Dignity::Mask;
 
         Dignity::from_index(index)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn promoted(self) -> Dignity {
         let index = ((self.0 >> 15) as DignityInner) & Dignity::Mask;
 
         Dignity::from_index(index)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn index(self) -> MoveInner {
         self.0
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn is_capture(self) -> bool {
         self.captured() != DignityNone
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn is_pawn_double_move(self, moved: Dignity) -> bool {
         if moved != Pawn {
             return false;
@@ -185,21 +185,21 @@ impl Move {
         )
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn is_king_side_castling(self, moved: Dignity) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileG) &&
         (moved == King)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn is_queen_side_castling(self, moved: Dignity) -> bool {
         (self.from().file() == FileE) &&
         (self.to().file() == FileC) &&
         (moved == King)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn is_en_passant(self) -> bool {
         self.index() & Self::EnPassantSpecial != 0
     }
