@@ -9,6 +9,7 @@ pub struct StaticBuffer<E, const SIZE: usize> {
 
 impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
     // PERF: try to add inline attribute to all small functions
+    #[inline]
     pub const fn new() -> Self {
         Self {
             // SAFETY
@@ -21,29 +22,34 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         }
     }
 
+    #[inline]
     pub const fn len(&self) -> usize {
         self.cursor
     }
 
+    #[inline]
     pub const fn get(&self, index: usize) -> E
         where E: Copy
     {
-        unsafe { always(index < self.cursor) }
+        always!(index < self.cursor);
 
         self.data[index]
     }
 
+    #[inline]
     pub fn add(&mut self, value: E) {
-        unsafe { always(self.cursor < SIZE) }
+        always!(self.cursor < SIZE);
 
         self.data[self.cursor] = value;
         self.cursor += 1;
     }
 
-    pub fn as_slice(&self) -> &[E] {
+    #[inline]
+    pub const fn as_slice(&self) -> &[E] {
         return &self.data[..self.cursor];
     }
 
+    #[inline]
     pub fn contains(&self, expected: E) -> bool
         where E: PartialEq
     {
@@ -56,10 +62,12 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
         false
     }
 
+    #[inline]
     pub fn restore_cursor(&mut self, value: usize) {
         self.cursor = value;
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         self.restore_cursor(0);
     }

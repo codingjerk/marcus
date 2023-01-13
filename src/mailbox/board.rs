@@ -8,8 +8,7 @@ const MAX_HALFMOVE_CLOCK: HalfmoveClock = 999;
 const MIN_FEN_SIZE: usize = 24;
 const MAX_FEN_SIZE: usize = 90;
 
-// TODO: make sure it's enought
-const UNDO_STACK_LENGTH: usize = 100;
+const UNDO_STACK_LENGTH: usize = MAX_SEARCH_DEPTH;
 
 #[derive(PartialEq)]
 pub struct Board {
@@ -32,7 +31,8 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn empty() -> Self {
+    #[inline(always)]
+    pub const fn empty() -> Self {
         Board {
             // Basic structure
             squares: [PieceNone; 64],
@@ -47,11 +47,10 @@ impl Board {
     }
 
     // PERF: try to use something like read buffer to share cursor (fen_index)
+    #[inline(always)]
     pub fn from_fen(fen: &[u8]) -> Self {
-        unsafe {
-            always(fen.len() >= MIN_FEN_SIZE);
-            always(fen.len() <= MAX_FEN_SIZE);
-        }
+        always!(fen.len() >= MIN_FEN_SIZE);
+        always!(fen.len() <= MAX_FEN_SIZE);
 
         let mut result = Self {
             squares: [PieceNone; 64],
@@ -71,7 +70,7 @@ impl Board {
         macro_rules! fen_char {
             () => {
                 unsafe {
-                    always((fen_index as usize) < fen.len());
+                    always!((fen_index as usize) < fen.len());
                     *fen.get_unchecked(fen_index as usize)
                 }
             }
@@ -80,7 +79,7 @@ impl Board {
         macro_rules! skip_char {
             ($e:expr) => {
                 let c = fen_char!();
-                unsafe { always(c == $e) };
+                always!(c == $e);
                 fen_index += 1;
             }
         }
@@ -88,11 +87,9 @@ impl Board {
         // 1. Position
         // NOTE: following code depends on specific square representation
         //       so there are asserts for that
-        unsafe {
-            always(a1.index() == 0);
-            always(a8.index() == 56);
-            always(h8.index() == 63);
-        }
+        always!(a1.index() == 0);
+        always!(a8.index() == 56);
+        always!(h8.index() == 63);
 
         for rank in Rank::top_to_bottom() {
             let mut file: u8 = 0;
@@ -177,7 +174,7 @@ impl Board {
             }
 
             let digit = fen_char!();
-            unsafe { always(b'0' <= digit && digit <= b'9') }
+            always!(b'0' <= digit && digit <= b'9');
 
             result.halfmove_clock[0] *= 10;
             // NOTE: x & 0b1111 is equivalent to x - b'0' (if b'0' <= digit <= b'9')
@@ -193,30 +190,52 @@ impl Board {
         result
     }
 
+    #[inline(always)]
+    pub fn find_piece(&self, piece: Piece) -> Option<Square> {
+        for square in Square::iter() {
+            if self.piece(square) == piece {
+                return Some(square);
+            }
+        }
+
+        None
+    }
+
+    #[inline(always)]
+    pub fn find_king(&self, side: Color) -> Option<Square> {
+        self.find_piece(Piece::new(side, King))
+    }
+
+    #[inline(always)]
     pub const fn piece(&self, at: Square) -> Piece {
         let index = at.index() as usize;
-        unsafe { always(index < 64) }
+        always!(index < 64);
 
         self.squares[index]
     }
 
+    #[inline(always)]
     pub const fn side_to_move(&self) -> Color {
         self.side_to_move
     }
 
+    #[inline(always)]
     pub const fn castling_rights(&self) -> CastlingRights {
         self.castling_rights[self.ply]
     }
 
+    #[inline(always)]
     pub const fn en_passant_file(&self) -> File {
         self.en_passant_file[self.ply]
     }
 
+    #[inline(always)]
     pub const fn halfmove_clock(&self) -> HalfmoveClock {
         self.halfmove_clock[self.ply]
     }
 
     // PERF: check if #[inline] works good here
+    #[inline(always)]
     pub fn fen(&self, buffer: &mut StaticBuffer<u8, MAX_FEN_SIZE>) {
         // 1. Position
         for rank in Rank::top_to_bottom() {
@@ -268,7 +287,7 @@ impl Board {
 
         // 5. Halfmove clock
         let hmc = self.halfmove_clock();
-        unsafe { always(hmc <= MAX_HALFMOVE_CLOCK) }
+        always!(hmc <= MAX_HALFMOVE_CLOCK);
 
         let x = (hmc / 100 % 10) as u8;
         let y = (hmc / 10 % 10) as u8;
@@ -295,6 +314,8 @@ impl Board {
 
     // Creates random board, using `rng`
     // NOTE: this board can be invalid chess board
+    #[cfg(test)]
+    #[inline(always)]
     pub fn rand(rng: &mut FastRng) -> Self {
         let mut result = Self::empty();
 
@@ -328,69 +349,79 @@ impl Board {
         result
     }
 
+    #[inline(always)]
     pub fn set_piece(&mut self, at: Square, piece: Piece) {
-        unsafe {
-            always(self.piece(at) == PieceNone);
-        }
+        always!(self.piece(at) == PieceNone);
 
         self.set_piece_unchecked(at, piece);
     }
 
+    #[inline(always)]
     pub fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
         let index = at.index() as usize;
 
+        always!(index < 64);
         unsafe {
-            always(index < 64);
             *self.squares.get_unchecked_mut(index) = piece;
         }
     }
 
+    #[inline(always)]
     pub fn remove_piece(&mut self, at: Square) {
-        unsafe { always(self.piece(at) != PieceNone) }
+        always!(self.piece(at) != PieceNone);
         self.set_piece_unchecked(at, PieceNone);
     }
 
+    #[inline(always)]
     pub fn swap_side_to_move(&mut self) {
         self.side_to_move.swap()
     }
 
+    #[inline(always)]
     pub fn push_undo(&mut self) {
         let prev_ply = self.ply;
         self.ply += 1;
 
-        unsafe { always(self.ply < UNDO_STACK_LENGTH) }
+        always!(self.ply < UNDO_STACK_LENGTH);
 
         self.castling_rights[self.ply] = self.castling_rights[prev_ply];
         self.halfmove_clock[self.ply] = self.halfmove_clock[prev_ply];
     }
 
+    #[inline(always)]
     pub fn pop_undo(&mut self) {
-        unsafe { always(self.ply > 0) }
+        always!(self.ply > 0);
 
         self.ply -= 1;
     }
 
+    #[inline(always)]
     pub fn disallow_castling(&mut self, rights: CastlingRights) {
         self.castling_rights[self.ply].disallow(rights);
     }
 
+    #[inline(always)]
     pub fn set_en_passant_file(&mut self, file: File) {
         self.en_passant_file[self.ply] = file;
     }
 
+    #[inline(always)]
     pub fn unset_en_passant_file(&mut self) {
         self.set_en_passant_file(FileEnPassantNone);
     }
 
+    #[inline(always)]
     pub fn reset_halfmove_clock(&mut self) {
         self.halfmove_clock[self.ply] = 0;
     }
 
+    #[inline(always)]
     pub fn increase_halfmove_clock(&mut self) {
         // PERF: try to increase it in push_undo and just be no-op here
         self.halfmove_clock[self.ply] += 1;
     }
 
+    #[inline(always)]
     pub fn has_possible_pawn_structure(&self) -> bool {
         for square in Square::iter() {
             let piece = self.piece(square);
@@ -408,6 +439,7 @@ impl Board {
         true
     }
 
+    #[inline(always)]
     pub fn has_possible_en_passant_square(&self) -> bool {
         if self.en_passant_file() == FileEnPassantNone {
             return true;
@@ -431,14 +463,15 @@ impl Board {
         true
     }
 
+    #[inline(always)]
     pub fn has_possible_kings_setup(&self) -> bool {
         let mut white_kings = 0;
         let mut black_kings = 0;
 
         for square in self.squares {
             match square {
-                x if x == BlackKing => black_kings += 1,
-                x if x == WhiteKing => white_kings += 1,
+                BlackKing => black_kings += 1,
+                WhiteKing => white_kings += 1,
                 _ => {},
             }
         }

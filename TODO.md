@@ -4,7 +4,7 @@
 
 ## WIP
 
-- [ ] TODOs / Refactor
+- [ ] Benches for board, move_generator, perft
 
 - [ ] Advanced perft
   - [ ] Hash perft
@@ -23,3 +23,5 @@
 - [ ] Release score
   - [ ] Benchmarks
 - [ ] Configurable statistics module (features)
+- [ ] Disable std
+- [ ] Disable C lib (use syscalls)

@@ -2,21 +2,23 @@ use crate::prelude::*;
 
 pub type ColorInner = u8; // PERF: try smaller and bigger types
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Debug, Eq)]
+#[derive_const(Clone, PartialEq)]
 pub struct Color(ColorInner);
 
 impl Color {
     pub const Mask: ColorInner = 0b1;
 
+    #[inline(always)]
     pub const fn from_index(index: ColorInner) -> Self {
-        unsafe { always(index & Self::Mask == index) }
+        always!(index & Self::Mask == index);
 
         Self(index)
     }
 
     #[inline(always)]
-    pub fn from_fen(fen: u8) -> Self {
-        unsafe { always(fen == b'b' || fen == b'w') }
+    pub const fn from_fen(fen: u8) -> Self {
+        always!(fen == b'b' || fen == b'w');
 
         // NOTE: by happy coincidence
         //       code of 'b' ends with 0
@@ -24,34 +26,37 @@ impl Color {
         Self::from_index(fen & 0b1)
     }
 
+    #[inline(always)]
     pub const fn index(self) -> ColorInner {
         self.0
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn start_rank(self) -> Rank {
         match self {
             Black => Rank8,
             White => Rank1,
 
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn fen(self) -> u8 {
         match self {
             Black => b'b',
             White => b'w',
 
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
-    pub fn swapped(self) -> Self {
+    #[inline(always)]
+    pub const fn swapped(self) -> Self {
         Self::from_index(self.0 ^ 0b1)
     }
 
+    #[inline(always)]
     pub fn swap(&mut self) {
         *self = self.swapped();
     }

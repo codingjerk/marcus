@@ -9,86 +9,98 @@ pub type SquareInner = u8; // PERF: try smaller and bigger types
 // \___/ \___/ <- file
 //   | - rank
 // Total bits: 3 + 3 = 6
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy)]
+#[derive_const(Clone, PartialEq)]
 pub struct Square(SquareInner);
 
 impl Square {
     pub const Mask: SquareInner = 0b111111;
 
+    #[inline(always)]
     pub const fn from_index(index: SquareInner) -> Self {
-        unsafe { always(index & Self::Mask == index) }
+        always!(index & Self::Mask == index);
 
         Self(index)
     }
 
+    #[inline(always)]
     pub const fn from_file_rank(file: File, rank: Rank) -> Self {
         Self::from_index(file.0 ^ rank.0)
     }
 
+    #[inline(always)]
     pub const fn from_x_y(x: u8, y: u8) -> Self {
         Self::from_index(x ^ (y * 8))
     }
 
+    #[inline(always)]
     pub const fn from_fen(file: u8, rank: u8) -> Self {
-        unsafe {
-            always(b'a' <= file && file <= b'h');
-            always(b'1' <= rank && rank <= b'8');
-        }
+        always!(b'a' <= file && file <= b'h');
+        always!(b'1' <= rank && rank <= b'8');
 
         let index = (file - b'a') + (rank - b'1') * 8;
 
         Self::from_index(index)
     }
 
+    #[inline(always)]
     pub const fn index(self) -> SquareInner {
         self.0
     }
 
+    #[inline(always)]
     pub const fn iter() -> SquareIterator {
         SquareIterator(a1)
     }
 
+    #[inline(always)]
     pub const fn x(self) -> u8 {
         self.0 % 8
     }
 
+    #[inline(always)]
     pub const fn y(self) -> u8 {
         self.0 / 8
     }
 
+    #[inline(always)]
     pub const fn file(self) -> File {
         File::from_index(self.x())
     }
 
+    #[inline(always)]
     pub const fn rank(self) -> Rank {
         Rank::from_index(self.y() * 8)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn fen(self) -> (u8, u8) {
         let file = b'a' + self.x();
         let rank = b'1' + self.y();
 
-        unsafe {
-            always(b'a' <= file && file <= b'h');
-            always(b'1' <= rank && rank <= b'8');
-        }
+        always!(b'a' <= file && file <= b'h');
+        always!(b'1' <= rank && rank <= b'8');
 
         (file, rank)
     }
 
+    #[cfg(test)]
+    #[inline(always)]
     pub fn rand(rng: &mut FastRng) -> Self {
         Self::from_index(rng.rand_range_u8(0, 64))
     }
 
+    #[inline(always)]
     pub const fn up(self, by: SquareInner) -> Self {
         Self::from_index(self.index() + by * 8)
     }
 
+    #[inline(always)]
     pub const fn down(self, by: SquareInner) -> Self {
         Self::from_index(self.index() - by * 8)
     }
 
+    #[inline(always)]
     pub const fn by(self, dx: i8, dy: i8) -> Option<Self> {
         let x = self.x() as i8 + dx;
         let y = self.y() as i8 + dy;
@@ -101,25 +113,25 @@ impl Square {
 
     // Moves black pieces toward rank 1
     // And white pieces toward rank 8
+    #[inline(always)]
     pub const fn try_forward(
         self,
         side_to_move: Color,
         by: SquareInner,
     ) -> Option<Self> {
-        unsafe {
-            always(by <= 127);
-        }
+        always!(by <= 127);
 
         let by = by as i8;
 
         match side_to_move {
             Black => self.by(0, -by),
             White => self.by(0, by),
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
     // PERF: check if it's as fast as version without try
+    #[inline(always)]
     pub const fn forward(
         self,
         side_to_move: Color,
@@ -129,38 +141,47 @@ impl Square {
 
         match result {
             Some(square) => square,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
-    pub fn left_pawn_attack(
+    #[inline(always)]
+    pub const fn left_pawn_attack(
         self,
         side_to_move: Color,
     ) -> Option<Self> {
-        self.try_forward(side_to_move, 1)?
-            .by(1, 0)
+        match self.try_forward(side_to_move, 1) {
+            Some(value) => value.by(1, 0),
+            None => None,
+        }
     }
 
-    pub fn right_pawn_attack(
+    #[inline(always)]
+    pub const fn right_pawn_attack(
         self,
         side_to_move: Color,
     ) -> Option<Self> {
-        self.try_forward(side_to_move, 1)?
-            .by(-1, 0)
+        match self.try_forward(side_to_move, 1) {
+            Some(value) => value.by(-1, 0),
+            None => None,
+        }
     }
 
+    #[inline(always)]
     pub fn move_right_unchecked(&mut self, by: SquareInner) {
-        unsafe {
-            always(self.0 + by <= 100);
+        always!(self.0 + by <= 100);
 
+        unsafe {
             self.0 = self.0.unchecked_add(by);
         }
     }
 
+    #[inline(always)]
     pub fn move_down_unchecked(&mut self, by: SquareInner) {
         self.0 = self.0.wrapping_sub(by * 8);
     }
 
+    #[inline(always)]
     pub const fn en_passant(
         side_to_move: Color,
         en_passant_file: File,
@@ -170,11 +191,12 @@ impl Square {
         Self::from_file_rank(en_passant_file, en_passant_rank)
     }
 
+    #[inline(always)]
     pub const fn king_initial(side_to_move: Color) -> Self {
         match side_to_move {
             Black => e8,
             White => e1,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 }
@@ -192,6 +214,7 @@ pub struct SquareIterator(Square);
 impl Iterator for SquareIterator {
     type Item = Square;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if (self.0).0 > h8.0 {
             return None
@@ -276,38 +299,48 @@ pub const f8: Square = Square(61);
 pub const g8: Square = Square(62);
 pub const h8: Square = Square(63);
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Debug)]
+#[derive_const(Clone, PartialEq)]
 pub struct File(SquareInner);
 
 impl File {
-    pub const Mask: SquareInner = 0b000111;
+    pub const Mask: SquareInner              = 0b000111;
+    pub const EnPassantNoneFlag: SquareInner = 0b001000;
 
+
+    #[inline(always)]
     pub const fn from_index(index: SquareInner) -> Self {
-        unsafe { always(index & Self::Mask == index) }
+        always!(index & Self::Mask == index);
 
         Self(index)
     }
 
+    #[inline(always)]
     pub const fn from_fen(fen: u8) -> Self {
-        unsafe { always(b'a' <= fen && fen <= b'h') }
+        always!(b'a' <= fen && fen <= b'h');
 
         Self::from_index(fen - b'a')
     }
 
+    #[inline(always)]
     pub const fn a_to_h() -> FileIterator {
         FileIterator(FileA)
     }
 
+    #[cfg(test)]
+    #[inline(always)]
     pub fn rand(rng: &mut FastRng) -> Self {
         Self::from_index(rng.rand_range_u8(0, 8))
     }
 
-    // TODO: move en passant possibility to separate board field and
+    // PERF: move en passant possibility to separate board field and
     // disallow to use more than 3 bits here
+    #[inline(always)]
     pub const fn is_en_passant_none(self) -> bool {
-        (self.0 & 64) != 0
+        (self.0 & Self::EnPassantNoneFlag) != 0
     }
 
+    #[inline(always)]
     pub const fn fen(self) -> u8 {
         b'a' + self.0
     }
@@ -324,13 +357,14 @@ pub const FileH: File = File(7);
 
 // NOTE: this is not valid File and even not valid Square
 //       to catch if it will be used somethere except of checking
-pub const FileEnPassantNone: File = File(64);
+pub const FileEnPassantNone: File = File(File::EnPassantNoneFlag);
 
 pub struct FileIterator(File);
 
 impl Iterator for FileIterator {
     type Item = File;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if (self.0).0 > FileH.0 {
             return None
@@ -343,51 +377,61 @@ impl Iterator for FileIterator {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Debug)]
+#[derive_const(Clone, PartialEq)]
 pub struct Rank(SquareInner);
 
 impl Rank {
     pub const Mask: SquareInner = 0b111000;
 
+    #[inline(always)]
     pub const fn from_index(index: SquareInner) -> Self {
-        unsafe {
-            always(index % 8 == 0);
-            always(index <= 56);
-        }
+        always!(index % 8 == 0);
+        always!(index <= 56);
 
         Self(index)
     }
 
+    #[inline(always)]
     pub const fn top_to_bottom() -> RevRankIterator {
         RevRankIterator(Rank8)
     }
 
+    #[inline(always)]
     pub const fn pawn_double_rank(side_to_move: Color) -> Self {
         match side_to_move {
             Black => Rank7,
             White => Rank2,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
+    #[inline(always)]
     pub const fn pawn_pre_promotion_rank(side_to_move: Color) -> Self {
         match side_to_move {
             Black => Rank2,
             White => Rank7,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
+    #[inline(always)]
     pub const fn en_passant(side_to_move: Color) -> Self {
         match side_to_move {
             Black => Rank3,
             White => Rank6,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
+    #[inline(always)]
     pub const fn fen(self) -> u8 {
         b'1' + (self.0 / 8)
+    }
+
+    #[inline(always)]
+    pub const fn index(self) -> SquareInner {
+        self.0
     }
 }
 
@@ -405,6 +449,7 @@ pub struct RevRankIterator(Rank);
 impl Iterator for RevRankIterator {
     type Item = Rank;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if (self.0).0 > Rank8.0 {
             return None

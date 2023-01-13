@@ -4,18 +4,21 @@ use crate::prelude::*;
 
 pub type DignityInner = u8; // PERF: try smaller and bigger types
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Debug, Eq)]
+#[derive_const(Clone, PartialEq)]
 pub struct Dignity(DignityInner);
 
 impl Dignity {
     pub const Mask: DignityInner = 0b111;
 
+    #[inline(always)]
     pub const fn from_index(index: DignityInner) -> Self {
-        unsafe { always(index & Self::Mask == index) }
+        always!(index & Self::Mask == index);
 
         Self(index)
     }
 
+    #[inline(always)]
     pub const fn index(&self) -> DignityInner {
         self.0
     }
@@ -32,16 +35,17 @@ pub const Queen: Dignity  = Dignity(5);
 pub const King: Dignity   = Dignity(6);
 
 impl Dignity {
-    pub fn as_char(&self) -> char {
+    #[inline(always)]
+    pub const fn as_char(&self) -> char {
         match *self {
-            x if x == Pawn => 'P',
-            x if x == Knight => 'N',
-            x if x == Bishop => 'B',
-            x if x == Rook => 'R',
-            x if x == Queen => 'Q',
-            x if x == King => 'K',
+            Pawn => 'P',
+            Knight => 'N',
+            Bishop => 'B',
+            Rook => 'R',
+            Queen => 'Q',
+            King => 'K',
 
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 }
@@ -53,46 +57,52 @@ pub type PieceInner = u8; // PERF: try smaller and bigger types
 // ^ \ _ / <- Dignity
 // | - Color
 // Total bits: 1 + 3 = 4
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Eq)]
+#[derive_const(Clone, PartialEq)]
 pub struct Piece(PieceInner);
 
 impl Piece {
     pub const Mask: PieceInner = 0b1111;
 
+    #[inline(always)]
     pub const fn new(color: Color, dignity: Dignity) -> Self {
         let bits =
             (dignity.index() as PieceInner)
             ^ ((color.index() as PieceInner) << 3)
         ;
 
-        unsafe { always(bits & Self::Mask == bits) }
+        // TODO: always!(bits & Self::Mask == bits);
 
         Self(bits)
     }
 
+    #[inline(always)]
     pub const fn from_index(index: PieceInner) -> Self {
-        unsafe { always(index & Self::Mask == index) }
+        always!(index & Self::Mask == index);
 
         Self(index)
     }
 
+    #[inline(always)]
     pub const fn index(self) -> PieceInner {
         self.0
     }
 
+    #[inline(always)]
     pub const fn dignity(self) -> Dignity {
         let index = (self.index() as DignityInner) & Dignity::Mask;
 
         Dignity::from_index(index)
     }
 
+    #[inline(always)]
     pub const fn color(self) -> Color {
         let index = ((self.index() >> 3) as ColorInner) & Color::Mask;
 
         Color::from_index(index)
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn from_fen(fen: u8) -> Self {
         // Bit structure of input (fen char)
         // NOTE: works for ASCII encoding only
@@ -125,13 +135,13 @@ impl Piece {
         };
 
         let hash = (fen & 0b111111) as usize;
+        always!(hash <= 0b110010);
         unsafe {
-            always(hash <= 0b110010);
             *FEN_TO_PIECE.get_unchecked(hash)
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub const fn fen(self) -> u8 {
         const PIECE_TO_FEN: [u8; PieceMax.index() as usize + 1] = {
             let mut xs = [0; _];
@@ -154,12 +164,14 @@ impl Piece {
         };
 
         let index = self.index();
+        always!(index <= PieceMax.index());
         unsafe {
-            always(index <= PieceMax.index());
             *PIECE_TO_FEN.get_unchecked(index as usize)
         }
     }
 
+    #[cfg(test)]
+    #[inline(always)]
     pub fn rand(rng: &mut FastRng) -> Self {
         let dignity = Dignity::from_index(rng.rand_range_u8(1, 7));
         let color = Color::from_index(rng.rand_range_u8(0, 2));
@@ -187,7 +199,7 @@ impl fmt::Debug for Piece {
 
             PieceNone => write!(f, "None (Piece)"),
 
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 }

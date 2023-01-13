@@ -1,6 +1,5 @@
 use crate::prelude::*;
 
-// TODO: calculate
 const MAX_MOVE_BUFFER_SIZE: usize = 500;
 
 pub type MoveBuffer = StaticBuffer<Move, MAX_MOVE_BUFFER_SIZE>;
@@ -8,6 +7,7 @@ pub type MoveBuffer = StaticBuffer<Move, MAX_MOVE_BUFFER_SIZE>;
 pub struct MoveGenerator;
 
 impl MoveGenerator {
+    #[inline(always)]
     pub const fn new() -> Self {
         Self
     }
@@ -25,16 +25,16 @@ impl MoveGenerator {
             }
 
             let piece_gen = match piece.dignity() {
-                p if p == Pawn => Self::generate_for_pawn,
-                p if p == Knight => Self::generate_for_knight,
-                p if p == Bishop => Self::generate_for_bishop,
-                p if p == Rook => Self::generate_for_rook,
-                p if p == Queen => Self::generate_for_queen,
-                p if p == King => Self::generate_for_king,
+                Pawn => Self::generate_for_pawn,
+                Knight => Self::generate_for_knight,
+                Bishop => Self::generate_for_bishop,
+                Rook => Self::generate_for_rook,
+                Queen => Self::generate_for_queen,
+                King => Self::generate_for_king,
 
-                p if p == DignityNone => continue,
+                DignityNone => continue,
 
-                _ => unsafe { unreachable() },
+                _ => never!(),
             };
 
             piece_gen(self, square, board, buffer);
@@ -68,35 +68,30 @@ impl MoveGenerator {
         {
             board.remove_piece(ep_to.unwrap().forward(opp_color, 1));
         } else if chess_move.captured() != DignityNone {
-            unsafe {
-                always(
-                    board.piece(chess_move.to()).dignity() ==
-                    chess_move.captured()
-                );
-                always(
-                    board.piece(chess_move.to()).color() !=
-                    board.side_to_move()
-                );
-            }
+            always!(
+                board.piece(chess_move.to()).dignity() ==
+                chess_move.captured()
+            );
+            always!(
+                board.piece(chess_move.to()).color() !=
+                board.side_to_move()
+            );
         }
 
         board.set_piece_unchecked(chess_move.to(), piece);
         board.remove_piece(chess_move.from());
 
-        if piece.dignity() == King && chess_move.is_king_side_castling() {
+        if chess_move.is_king_side_castling(piece.dignity()) {
             let cr = CastlingRights::king_side(stm);
             board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_initial());
-        } else if piece.dignity() == King && chess_move.is_queen_side_castling() {
+        } else if chess_move.is_queen_side_castling(piece.dignity()) {
             let stm = board.side_to_move();
             let cr = CastlingRights::queen_side(stm);
             board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_initial());
         }
 
-        // TODO: refactor
-        // PERF: try to collect disallow mask first, then do
-        //       board.push_castling_rights(disallow_mask)
         board.push_undo();
 
         // Castling checks
@@ -104,11 +99,15 @@ impl MoveGenerator {
             board.disallow_castling(CastlingRights::both(stm));
         }
 
-        if piece.dignity() == Rook && chess_move.from().file() == FileA {
+        if piece.dignity() == Rook &&
+           chess_move.from().file() == FileA &&
+           chess_move.from().rank() == stm.start_rank() {
             board.disallow_castling(CastlingRights::queen_side(stm));
         }
 
-        if piece.dignity() == Rook && chess_move.from().file() == FileH {
+        if piece.dignity() == Rook &&
+           chess_move.from().file() == FileH &&
+           chess_move.from().rank() == stm.start_rank() {
             board.disallow_castling(CastlingRights::king_side(stm));
         }
 
@@ -125,7 +124,7 @@ impl MoveGenerator {
         }
 
         // En-passant checks
-        if piece.dignity() == Pawn && chess_move.is_pawn_double_move() {
+        if chess_move.is_pawn_double_move(piece.dignity()) {
             board.set_en_passant_file(chess_move.from().file());
         } else {
             board.unset_en_passant_file();
@@ -148,9 +147,8 @@ impl MoveGenerator {
         board: &mut Board,
         chess_move: Move,
     ) {
-        // TODO: choose better names
-        let stm = board.side_to_move();
-        let opp_color = stm.swapped();
+        let moved_side = board.side_to_move();
+        let opp_color = moved_side.swapped();
 
         if chess_move.promoted() != DignityNone {
             let pawn = Piece::new(opp_color, Pawn);
@@ -165,20 +163,21 @@ impl MoveGenerator {
 
         if chess_move.is_en_passant() {
             // PERF: it's always Pawn, try to hardcode
-            let captured_piece = Piece::new(stm, chess_move.captured());
-            let en_passant_square = chess_move.to().forward(stm, 1);
+            always!(chess_move.captured() == Pawn);
+            
+            let captured_piece = Piece::new(moved_side, chess_move.captured());
+            let en_passant_square = chess_move.to().forward(moved_side, 1);
             board.set_piece(en_passant_square, captured_piece);
         } else if chess_move.captured() != DignityNone {
-            let captured_piece = Piece::new(stm, chess_move.captured());
+            let captured_piece = Piece::new(moved_side, chess_move.captured());
             board.set_piece(chess_move.to(), captured_piece);
         }
 
-        // TODO: refactor this part
-        if moved_piece.dignity() == King && chess_move.is_queen_side_castling() {
+        if chess_move.is_queen_side_castling(moved_piece.dignity()) {
             let cr = CastlingRights::queen_side(opp_color);
             board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
-        } else if moved_piece.dignity() == King && chess_move.is_king_side_castling() {
+        } else if chess_move.is_king_side_castling(moved_piece.dignity()) {
             let cr = CastlingRights::king_side(opp_color);
             board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
@@ -193,44 +192,40 @@ impl MoveGenerator {
         board: &mut Board,
         chess_move: Move,
     ) -> bool {
-        let king = Piece::new(board.side_to_move().swapped(), King);
-        let mut king_pos = None;
-        for square in Square::iter() {
-            if board.piece(square) == king {
-                king_pos = Some(square);
-            }
-        }
+        let stm = board.side_to_move();
+        let moved_side = stm.swapped();
 
-        let king_pos = match king_pos {
-            None => return true, // TODO: figure out better semantic
-            Some(king_pos) => king_pos,
-        };
+        let king_pos = board.find_king(moved_side);
+        always!(king_pos.is_some());
+        let king_pos = king_pos.unwrap();
 
-        if self.can_be_attacked(king_pos, board, board.side_to_move()) {
+        if self.can_be_attacked(king_pos, board, stm) {
             return false;
         }
 
         let moved_piece = board.piece(chess_move.to());
-        if moved_piece == king && chess_move.is_king_side_castling() {
+        always!(moved_piece.color() == moved_side);
+
+        if chess_move.is_king_side_castling(moved_piece.dignity()) {
             let leave_square = king_pos.by(-2, 0).unwrap();
-            if self.can_be_attacked(leave_square, board, board.side_to_move()) {
+            if self.can_be_attacked(leave_square, board, stm) {
                 return false;
             }
 
             let cross_square = king_pos.by(-1, 0).unwrap();
-            if self.can_be_attacked(cross_square, board, board.side_to_move()) {
+            if self.can_be_attacked(cross_square, board, stm) {
                 return false;
             }
         }
 
-        if moved_piece == king && chess_move.is_queen_side_castling() {
+        if chess_move.is_queen_side_castling(moved_piece.dignity()) {
             let leave_square = king_pos.by(2, 0).unwrap();
-            if self.can_be_attacked(leave_square, board, board.side_to_move()) {
+            if self.can_be_attacked(leave_square, board, stm) {
                 return false;
             }
 
             let cross_square = king_pos.by(1, 0).unwrap();
-            if self.can_be_attacked(cross_square, board, board.side_to_move()) {
+            if self.can_be_attacked(cross_square, board, stm) {
                 return false;
             }
         }
@@ -424,7 +419,7 @@ impl MoveGenerator {
         }
 
         let ep_to = Square::en_passant(stm, board.en_passant_file());
-        unsafe { always(board.piece(ep_to) == PieceNone) }
+        always!(board.piece(ep_to) == PieceNone);
 
         if ep_to == to {
             buffer.add(Move::en_passant(from, to));
@@ -1042,7 +1037,7 @@ mod tests {
 
     #[test]
     fn make_move_promotion() {
-        let mut board = Board::from_fen(b"8/3P4/8/8/8/8/8/8 w - - 0 1");
+        let mut board = Board::from_fen(b"k7/3P4/8/8/8/8/8/K7 w - - 0 1");
         let movegen = MoveGenerator::new();
         let legal = movegen.make_move(&mut board, Move::promotion(d7, d8, Queen));
 
@@ -1053,7 +1048,7 @@ mod tests {
 
     #[test]
     fn make_move_capture() {
-        let mut board = Board::from_fen(b"8/8/8/5r2/4P3/8/8/8 w - - 0 1");
+        let mut board = Board::from_fen(b"k7/8/8/5r2/4P3/8/8/K7 w - - 0 1");
         let movegen = MoveGenerator::new();
         let legal = movegen.make_move(&mut board, Move::capture(e4, f5, Rook));
 
@@ -1092,7 +1087,7 @@ mod tests {
 
     #[test]
     fn make_move_en_passant() {
-        let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
+        let mut board = Board::from_fen(b"k7/8/8/5Pp1/8/8/8/K7 w - g6 0 1");
         let movegen = MoveGenerator::new();
         let legal = movegen.make_move(&mut board, Move::en_passant(f5, g6));
 
@@ -1247,7 +1242,7 @@ mod tests {
 
     #[test]
     fn make_move_pawn_move_resets_halfmove_clock() {
-        let mut board = Board::from_fen(b"1k2r3/8/8/8/4B3/8/2P5/5K2 b - - 15 1");
+        let mut board = Board::from_fen(b"1k2r3/8/8/8/4B3/8/2P5/5K2 w - - 15 1");
         let chess_move = Move::pawn_single(c2, c3);
         assert_eq!(board.halfmove_clock(), 15);
 
@@ -1366,7 +1361,7 @@ mod tests {
 
     #[test]
     fn unmake_move_restores_en_passant_captured_pawn() {
-        let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
+        let mut board = Board::from_fen(b"k7/8/8/5Pp1/8/8/8/K7 w - g6 0 1");
         let movegen = MoveGenerator::new();
         let chess_move = Move::en_passant(f5, g6);
         let _legal = movegen.make_move(&mut board, Move::en_passant(f5, g6));
@@ -1377,7 +1372,7 @@ mod tests {
 
     #[test]
     fn unmake_move_restores_en_passant_square() {
-        let mut board = Board::from_fen(b"8/8/8/5Pp1/8/8/8/8 w - g6 0 1");
+        let mut board = Board::from_fen(b"k7/8/8/5Pp1/8/8/8/K7 w - g6 0 1");
         let movegen = MoveGenerator::new();
         let chess_move = Move::en_passant(f5, g6);
         let _legal = movegen.make_move(&mut board, Move::en_passant(f5, g6));

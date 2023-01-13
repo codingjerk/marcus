@@ -9,53 +9,60 @@ pub type CastlingRightsInner = u8; // PERF: try smaller and bigger types
 // | | - WhiteQueenSide
 // | - WhiteKingSide
 // Total bits: 4
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Debug, Eq)]
+#[derive_const(Clone, PartialEq)]
 pub struct CastlingRights(CastlingRightsInner);
 
 impl CastlingRights {
     pub const Mask: CastlingRightsInner = 0b1;
 
+    #[inline(always)]
     pub const fn from_index(index: CastlingRightsInner) -> Self {
-        unsafe { always(index & Self::Mask == index) }
+        always!(index & Self::Mask == index);
 
         Self(index)
     }
 
-    // TODO: use direction instead of different constructors
-    // PERF: make it simple shl by color (by wbwb layout)
+    // PERF (better): make it templated by Color
+    // PERF: make it simple shl by color (by separate direction + wbwb layout)
+    #[inline(always)]
     pub const fn king_side(side_to_move: Color) -> Self {
         match side_to_move {
             Black => BlackKingSide,
             White => WhiteKingSide,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
+    #[inline(always)]
     pub const fn queen_side(side_to_move: Color) -> Self {
         match side_to_move {
             Black => BlackQueenSide,
             White => WhiteQueenSide,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
+    #[inline(always)]
     pub const fn both(side_to_move: Color) -> Self {
         match side_to_move {
             Black => CastlingRightsBlack,
             White => CastlingRightsWhite,
-            _ => unsafe { unreachable() },
+            _ => never!(),
         }
     }
 
+    #[inline(always)]
     pub const fn index(self) -> CastlingRightsInner {
         self.0
     }
 
+    #[inline(always)]
     pub fn unset(&mut self) {
         self.0 = 0;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn set_from_fen(&mut self, fen: u8) {
         const FEN_TO_CASTLING: [CastlingRights; b'q' as usize + 1] = {
             let mut xs = [CastlingRightsNone; _];
@@ -69,26 +76,27 @@ impl CastlingRights {
         };
 
         let castling = unsafe { *FEN_TO_CASTLING.get_unchecked(fen as usize) };
-        unsafe { always(castling != CastlingRightsNone) }
+        always!(castling != CastlingRightsNone);
 
         self.allow(castling);
     }
 
+    #[inline(always)]
     pub const fn is_allowed(self, other: Self) -> bool {
         (self.0 & other.0) == other.0
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn allow(&mut self, other: Self) {
         self.0 |= other.0;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn disallow(&mut self, other: Self) {
         self.0 &= !other.0;
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn fen(self, buffer: &mut StaticBuffer<u8, 90>) {
         if self == CastlingRightsNone {
             buffer.add(b'-');
@@ -112,35 +120,36 @@ impl CastlingRights {
         }
     }
 
-    pub fn king_destination(self) -> Square {
-        // TODO: use separate structures for single castling and
-        //       castling "map"
+    #[inline(always)]
+    pub const fn king_destination(self) -> Square {
         match self {
-            cr if cr == BlackQueenSide => c8,
-            cr if cr == BlackKingSide  => g8,
-            cr if cr == WhiteQueenSide => c1,
-            cr if cr == WhiteKingSide  => g1,
-            _ => unsafe { unreachable() },
+            BlackQueenSide => c8,
+            BlackKingSide  => g8,
+            WhiteQueenSide => c1,
+            WhiteKingSide  => g1,
+            _ => never!(),
         }
     }
 
-    pub fn rook_initial(self) -> Square {
+    #[inline(always)]
+    pub const fn rook_initial(self) -> Square {
         match self {
-            cr if cr == BlackQueenSide => a8,
-            cr if cr == BlackKingSide  => h8,
-            cr if cr == WhiteQueenSide => a1,
-            cr if cr == WhiteKingSide  => h1,
-            _ => unsafe { unreachable() },
+            BlackQueenSide => a8,
+            BlackKingSide  => h8,
+            WhiteQueenSide => a1,
+            WhiteKingSide  => h1,
+            _ => never!(),
         }
     }
 
-    pub fn rook_destination(self) -> Square {
+    #[inline(always)]
+    pub const fn rook_destination(self) -> Square {
         match self {
-            cr if cr == BlackQueenSide => d8,
-            cr if cr == BlackKingSide  => f8,
-            cr if cr == WhiteQueenSide => d1,
-            cr if cr == WhiteKingSide  => f1,
-            _ => unsafe { unreachable() },
+            BlackQueenSide => d8,
+            BlackKingSide  => f8,
+            WhiteQueenSide => d1,
+            WhiteKingSide  => f1,
+            _ => never!(),
         }
     }
 }

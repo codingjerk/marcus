@@ -1,17 +1,25 @@
-use core::hint::unreachable_unchecked;
-
-#[inline(always)]
-pub const unsafe fn unreachable() -> ! {
-    if cfg!(debug_assertions) {
-        unreachable!()
-    } else {
-        unreachable_unchecked()
+#[cfg(debug_assertions)]
+macro_rules! never {
+    () => {
+        panic!("unreachable condition met")
     }
 }
 
-#[inline(always)]
-pub const unsafe fn always(condition: bool) {
-    if !condition {
-        unreachable()
+#[cfg(not(debug_assertions))]
+macro_rules! never {
+    () => {
+        unsafe { std::hint::unreachable_unchecked() }
     }
 }
+
+pub(crate) use never;
+
+macro_rules! always {
+    ( $condition:expr ) => {
+        if !$condition {
+            never!();
+        }
+    }
+}
+
+pub(crate) use always;
