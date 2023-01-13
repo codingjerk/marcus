@@ -1428,115 +1428,98 @@ mod bench {
 
     use test::{Bencher, black_box};
 
+    macro_rules! bench_generate {
+        ($b:ident, $fen:literal) => {
+            let fen = black_box($fen);
+            let board = Board::from_fen(fen);
+            let movegen = MoveGenerator::new();
+
+            $b.iter(|| {
+                let mut buffer = MoveBuffer::new();
+                movegen.generate(&board, &mut buffer);
+
+                buffer
+            })
+        }
+    }
+
     #[bench]
     fn generate_empty(b: &mut Bencher) {
-        let fen = black_box(b"8/8/8/8/8/8/8/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"8/8/8/8/8/8/8/8 w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_startpos(b: &mut Bencher) {
-        let fen = black_box(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_pawns(b: &mut Bencher) {
-        let fen = black_box(b"8/pppppppp/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"8/pppppppp/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_knights(b: &mut Bencher) {
-        let fen = black_box(b"8/8/nnnnnnnn/8/8/NNNNNNNN/8/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"8/8/nnnnnnnn/8/8/NNNNNNNN/8/8 w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_bishops(b: &mut Bencher) {
-        let fen = black_box(b"8/8/bbbbbbbb/8/8/BBBBBBBB/8/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"8/8/bbbbbbbb/8/8/BBBBBBBB/8/8 w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_rooks(b: &mut Bencher) {
-        let fen = black_box(b"8/8/rrrrrrrr/8/8/RRRRRRRR/8/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"8/8/rrrrrrrr/8/8/RRRRRRRR/8/8 w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_queens(b: &mut Bencher) {
-        let fen = black_box(b"8/8/qqqqqqqq/8/8/QQQQQQQQ/8/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
-
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
-
-            buffer
-        })
+        bench_generate!(b, b"8/8/qqqqqqqq/8/8/QQQQQQQQ/8/8 w KQkq - 0 1");
     }
 
     #[bench]
     fn generate_kings(b: &mut Bencher) {
-        let fen = black_box(b"8/8/kkkkkkkk/8/8/KKKKKKKK/8/8 w KQkq - 0 1");
-        let board = Board::from_fen(fen);
-        let movegen = MoveGenerator::new();
+        bench_generate!(b, b"8/8/kkkkkkkk/8/8/KKKKKKKK/8/8 w KQkq - 0 1");
+    }
 
-        b.iter(|| {
-            let mut buffer = MoveBuffer::new();
-            movegen.generate(&board, &mut buffer);
+    #[bench]
+    fn generate_empty_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/8/8/8/8/8/8/8 b KQkq - 0 1");
+    }
 
-            buffer
-        })
+    #[bench]
+    fn generate_startpos_black(b: &mut Bencher) {
+        bench_generate!(b, b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn generate_pawns_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/pppppppp/8/8/8/8/PPPPPPPP/8 b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn generate_knights_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/8/nnnnnnnn/8/8/NNNNNNNN/8/8 b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn generate_bishops_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/8/bbbbbbbb/8/8/BBBBBBBB/8/8 b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn generate_rooks_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/8/rrrrrrrr/8/8/RRRRRRRR/8/8 b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn generate_queens_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/8/qqqqqqqq/8/8/QQQQQQQQ/8/8 b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn generate_kings_black(b: &mut Bencher) {
+        bench_generate!(b, b"8/8/kkkkkkkk/8/8/KKKKKKKK/8/8 b KQkq - 0 1");
     }
 }
