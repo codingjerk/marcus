@@ -11,7 +11,6 @@ const MAX_FEN_SIZE: usize = 90;
 // TODO: make sure it's enought
 const UNDO_STACK_LENGTH: usize = 100;
 
-// TODO: move to board/mailbox8x8
 #[derive(PartialEq)]
 pub struct Board {
     // PERF: try two arrays for dignities instead
@@ -47,7 +46,7 @@ impl Board {
         }
     }
 
-    // TODO: use something like read buffer to share cursor (fen_index)
+    // PERF: try to use something like read buffer to share cursor (fen_index)
     pub fn from_fen(fen: &[u8]) -> Self {
         unsafe {
             always(fen.len() >= MIN_FEN_SIZE);

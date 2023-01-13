@@ -5,7 +5,6 @@ const MAX_MOVE_BUFFER_SIZE: usize = 500;
 
 pub type MoveBuffer = StaticBuffer<Move, MAX_MOVE_BUFFER_SIZE>;
 
-// TODO: move to mailbox8x8
 pub struct MoveGenerator;
 
 impl MoveGenerator {

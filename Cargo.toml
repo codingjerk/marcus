@@ -5,6 +5,14 @@ edition = "2021"
 
 [dependencies]
 
+[features]
+default = [
+  "mailbox",
+  "perft",
+]
+mailbox = []
+perft = []
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
