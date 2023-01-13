@@ -4,8 +4,6 @@
 
 ## WIP
 
-- [ ] Benches for board, move_generator, perft
-
 - [ ] Advanced perft
   - [ ] Hash perft
   - [ ] Parallel perft
@@ -25,3 +23,4 @@
 - [ ] Configurable statistics module (features)
 - [ ] Disable std
 - [ ] Disable C lib (use syscalls)
+- [ ] Likely/unlikely
