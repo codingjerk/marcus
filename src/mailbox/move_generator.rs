@@ -1443,6 +1443,37 @@ mod bench {
         }
     }
 
+    macro_rules! bench_make_move {
+        ($b:ident, $fen:literal, $chess_move:expr) => {
+            let fen = black_box($fen);
+            let board = Board::from_fen(fen);
+            let movegen = MoveGenerator::new();
+
+            $b.iter(|| {
+                let mut board = board.clone();
+                let legal = movegen.make_move(&mut board, $chess_move);
+
+                (legal, board)
+            })
+        }
+    }
+
+    macro_rules! bench_unmake_move {
+        ($b:ident, $fen:literal, $chess_move:expr) => {
+            let fen = black_box($fen);
+            let mut board = Board::from_fen(fen);
+            let movegen = MoveGenerator::new();
+            let _ = movegen.make_move(&mut board, $chess_move);
+
+            $b.iter(|| {
+                let mut board = board.clone();
+                movegen.unmake_move(&mut board, $chess_move);
+
+                board
+            })
+        }
+    }
+
     #[bench]
     fn generate_empty(b: &mut Bencher) {
         bench_generate!(b, b"8/8/8/8/8/8/8/8 w KQkq - 0 1");
@@ -1521,5 +1552,95 @@ mod bench {
     #[bench]
     fn generate_kings_black(b: &mut Bencher) {
         bench_generate!(b, b"8/8/kkkkkkkk/8/8/KKKKKKKK/8/8 b KQkq - 0 1");
+    }
+
+    #[bench]
+    fn make_move_usual(b: &mut Bencher) {
+        bench_make_move!(
+            b,
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            Move::quiet(b1, c3)
+        );
+    }
+
+    #[bench]
+    fn make_move_pawn_double(b: &mut Bencher) {
+        bench_make_move!(
+            b,
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            Move::quiet(e2, e4)
+        );
+    }
+
+    #[bench]
+    fn make_move_capture(b: &mut Bencher) {
+        bench_make_move!(
+            b,
+            b"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1",
+            Move::capture(e4, d5, Pawn)
+        );
+    }
+
+    #[bench]
+    fn make_move_castling(b: &mut Bencher) {
+        bench_make_move!(
+            b,
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1",
+            Move::queen_side_castling(e1, c1)
+        );
+    }
+
+    #[bench]
+    fn make_move_promotion(b: &mut Bencher) {
+        bench_make_move!(
+            b,
+            b"1nbqkbnr/Pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR w KQk - 0 1",
+            Move::promotion(a7, a8, Queen)
+        );
+    }
+
+    #[bench]
+    fn unmake_move_usual(b: &mut Bencher) {
+        bench_unmake_move!(
+            b,
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            Move::quiet(b1, c3)
+        );
+    }
+
+    #[bench]
+    fn unmake_move_pawn_double(b: &mut Bencher) {
+        bench_unmake_move!(
+            b,
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            Move::quiet(e2, e4)
+        );
+    }
+
+    #[bench]
+    fn unmake_move_capture(b: &mut Bencher) {
+        bench_unmake_move!(
+            b,
+            b"rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1",
+            Move::capture(e4, d5, Pawn)
+        );
+    }
+
+    #[bench]
+    fn unmake_move_castling(b: &mut Bencher) {
+        bench_unmake_move!(
+            b,
+            b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1",
+            Move::queen_side_castling(e1, c1)
+        );
+    }
+
+    #[bench]
+    fn unmake_move_promotion(b: &mut Bencher) {
+        bench_unmake_move!(
+            b,
+            b"1nbqkbnr/Pppppppp/8/8/8/8/1PPPPPPP/RNBQKBNR w KQk - 0 1",
+            Move::promotion(a7, a8, Queen)
+        );
     }
 }

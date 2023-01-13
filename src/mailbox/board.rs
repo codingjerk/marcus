@@ -10,7 +10,7 @@ const MAX_FEN_SIZE: usize = 90;
 
 const UNDO_STACK_LENGTH: usize = MAX_SEARCH_DEPTH;
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Board {
     // PERF: try two arrays for dignities instead
     //       try to remove it from bitboard representation
