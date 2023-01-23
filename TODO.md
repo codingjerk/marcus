@@ -4,9 +4,6 @@
 
 ## WIP
 
-- [ ] Remove useless features:
-  - [ ] Rename stats feature
-
 - [ ] Hash fuzzing
 
 - [ ] Advanced perft

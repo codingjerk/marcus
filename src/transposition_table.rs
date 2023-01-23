@@ -75,7 +75,7 @@ struct Bucket {
 
     nodes: usize, // TODO: custom buckets
 
-    #[cfg(feature = "stats")]
+    #[cfg(feature = "transposition_table_checks")]
     fen: String,
 }
 
@@ -87,7 +87,7 @@ impl Bucket {
 
             nodes: 0,
 
-            #[cfg(feature = "stats")]
+            #[cfg(feature = "transposition_table_checks")]
             fen: String::new(),
         }
     }
@@ -118,7 +118,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         let small_key = full_key.index::<SIZE>();
 
         // TODO: log overwrite collision
-        #[cfg(feature = "stats")]
+        #[cfg(feature = "transposition_table_checks")]
         {
             // TODO: FenBuffer
             let mut fen_buffer = StaticBuffer::<u8, 90>::new();
@@ -152,7 +152,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         }
 
         // TODO: check for fen, log second-level collision
-        #[cfg(feature = "stats")]
+        #[cfg(feature = "transposition_table_checks")]
         {
             let mut fen_buffer = StaticBuffer::<u8, 90>::new();
             board.fen(&mut fen_buffer);
