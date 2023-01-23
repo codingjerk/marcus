@@ -3,15 +3,24 @@ use crate::prelude::*;
 // PERF: try other types
 type Depth = usize;
 
-fn perft_recursive(
+fn perft_recursive<const TT_SIZE: usize>(
     board: &mut Board,
     movegen: &MoveGenerator,
     move_buffer: &mut MoveBuffer,
+    transposition_table: &mut TranspositionTable<TT_SIZE>,
     depth: Depth,
 ) -> usize {
     if depth == 0 {
         return 1;
     }
+
+    if let Some(nodes) = transposition_table.get(board, depth) {
+        // TODO: hash-match / missmatch
+        // println!("match");
+        return nodes;
+    } else {
+        // println!("missmatch");
+    };
 
     let start_move_index = move_buffer.len();
     movegen.generate(board, move_buffer);
@@ -22,7 +31,7 @@ fn perft_recursive(
         let chess_move = move_buffer.get(move_index);
         let legal = movegen.make_move(board, chess_move);
         if legal {
-            result += perft_recursive(board, movegen, move_buffer, depth - 1);
+            result += perft_recursive(board, movegen, move_buffer, transposition_table, depth - 1);
         }
 
         movegen.unmake_move(board, chess_move);
@@ -30,18 +39,24 @@ fn perft_recursive(
 
     move_buffer.restore_cursor(start_move_index);
 
+    transposition_table.add(board, depth, result);
+
     result
 }
+
+static mut transposition_table_: TranspositionTable<{2 * 1024 * 1024}> = TranspositionTable::new();
 
 pub fn perft(fen: &[u8], depth: Depth) -> usize {
     let mut board = Board::from_fen(fen);
     let movegen = MoveGenerator::new();
     let mut move_buffer = MoveBuffer::new();
+    unsafe { transposition_table_.clean() }
 
     perft_recursive(
         &mut board,
         &movegen,
         &mut move_buffer,
+        unsafe { &mut transposition_table_ },
         depth,
     )
 }

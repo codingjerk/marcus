@@ -8,6 +8,8 @@
 #![allow(unused_imports)]
 #![allow(unused_mut)]
 
+#![allow(clippy::uninit_assumed_init)]
+
 #![feature(const_cmp)]
 #![feature(const_for)]
 #![feature(const_trait_impl)]
@@ -29,10 +31,12 @@ mod prelude;
 mod rand;
 mod settings;
 mod square;
+mod transposition_table;
 mod util;
 
 #[cfg(feature = "mailbox")]
 mod mailbox;
+
 
 #[cfg(all(feature = "perft", feature = "mailbox"))]
 fn perft() {

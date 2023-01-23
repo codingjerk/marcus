@@ -76,19 +76,21 @@ impl MoveGenerator {
                 board.piece(chess_move.to()).color() !=
                 board.side_to_move()
             );
+
+            board.remove_piece(chess_move.to());
         }
 
-        board.set_piece_unchecked(chess_move.to(), piece);
+        board.set_piece(chess_move.to(), piece);
         board.remove_piece(chess_move.from());
 
         if chess_move.is_king_side_castling(piece.dignity()) {
             let cr = CastlingRights::king_side(stm);
-            board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
+            board.set_piece(cr.rook_destination(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_initial());
         } else if chess_move.is_queen_side_castling(piece.dignity()) {
             let stm = board.side_to_move();
             let cr = CastlingRights::queen_side(stm);
-            board.set_piece_unchecked(cr.rook_destination(), Piece::new(stm, Rook));
+            board.set_piece(cr.rook_destination(), Piece::new(stm, Rook));
             board.remove_piece(cr.rook_initial());
         }
 
@@ -175,11 +177,11 @@ impl MoveGenerator {
 
         if chess_move.is_queen_side_castling(moved_piece.dignity()) {
             let cr = CastlingRights::queen_side(opp_color);
-            board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
+            board.set_piece(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
         } else if chess_move.is_king_side_castling(moved_piece.dignity()) {
             let cr = CastlingRights::king_side(opp_color);
-            board.set_piece_unchecked(cr.rook_initial(), Piece::new(opp_color, Rook));
+            board.set_piece(cr.rook_initial(), Piece::new(opp_color, Rook));
             board.remove_piece(cr.rook_destination());
         }
 
@@ -1187,7 +1189,7 @@ mod tests {
     #[test]
     fn make_move_rook_move_resets_castling_rights() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-        let chess_move = Move::quiet(a1, a2);
+        let chess_move = Move::quiet(a1, b1);
 
         let movegen = MoveGenerator::new();
         let _legal = movegen.make_move(&mut board, chess_move);
@@ -1390,6 +1392,25 @@ mod tests {
         movegen.unmake_move(&mut board, chess_move);
 
         assert_eq!(board.halfmove_clock(), 13);
+    }
+
+    #[test]
+    fn unmake_move_capture_restores_hash() {
+        let mut board = Board::from_fen(b"4k3/8/8/8/8/8/8/R1b1K3 w KQkq - 0 1");
+        let original_hash = board.hash();
+
+        let chess_move = Move::capture(a1, c1, Bishop);
+        let movegen = MoveGenerator::new();
+        let legal = movegen.make_move(&mut board, chess_move);
+
+        // Hash should be changed
+        assert_ne!(original_hash, board.hash());
+
+        assert!(legal);
+        movegen.unmake_move(&mut board, chess_move);
+
+        // Hash should be same as original
+        assert_eq!(original_hash, board.hash());
     }
 
     #[test]

@@ -299,7 +299,7 @@ pub const f8: Square = Square(61);
 pub const g8: Square = Square(62);
 pub const h8: Square = Square(63);
 
-#[derive(Copy, Debug)]
+#[derive(Copy, Debug, Eq)]
 #[derive_const(Clone, PartialEq)]
 pub struct File(SquareInner);
 

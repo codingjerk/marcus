@@ -4,9 +4,19 @@
 
 ## WIP
 
+- [ ] Remove useless features:
+  - [ ] Mailbox
+  - [ ] Rename stats feature
+
+- [ ] Clippy
+
+- [ ] Hash fuzzing
+
 - [ ] Advanced perft
-  - [ ] Hash perft
   - [ ] Parallel perft
+
+- [ ] Performance
+  - [ ] Unwrap unsafe
 
 ## Big parts
 

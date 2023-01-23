@@ -45,7 +45,7 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
 
     #[inline(always)]
     pub const fn as_slice(&self) -> &[E] {
-        return &self.data[..self.cursor];
+        &self.data[..self.cursor]
     }
 
     #[inline(always)]

@@ -28,6 +28,9 @@ pub struct Board {
     castling_rights: [CastlingRights; UNDO_STACK_LENGTH],
     en_passant_file: [File; UNDO_STACK_LENGTH],
     halfmove_clock: [HalfmoveClock; UNDO_STACK_LENGTH],
+
+    // Zorbist hashing
+    hash_key: ZorbistKey,
 }
 
 impl Board {
@@ -43,6 +46,10 @@ impl Board {
             castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
             en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
             halfmove_clock: [0; UNDO_STACK_LENGTH],
+
+            // Hashing
+            // PERF: try to keep hash_key in undo table
+            hash_key: ZorbistKey::new(),
         }
     }
 
@@ -63,6 +70,8 @@ impl Board {
             castling_rights: [CastlingRightsNone; UNDO_STACK_LENGTH],
             en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
             halfmove_clock: [0; UNDO_STACK_LENGTH],
+
+            hash_key: ZorbistKey::new(),
         };
 
         let mut fen_index: u8 = 0;
@@ -192,13 +201,10 @@ impl Board {
 
     #[inline(always)]
     pub fn find_piece(&self, piece: Piece) -> Option<Square> {
-        for square in Square::iter() {
-            if self.piece(square) == piece {
-                return Some(square);
-            }
-        }
-
-        None
+        // PERF:: check if manual implementation is faster
+        Square::iter().find(|&square| {
+            self.piece(square) == piece
+        })
     }
 
     #[inline(always)]
@@ -211,6 +217,7 @@ impl Board {
         let index = at.index() as usize;
         always!(index < 64);
 
+        // PERF: check if always is enought
         self.squares[index]
     }
 
@@ -357,18 +364,44 @@ impl Board {
 
     #[inline(always)]
     pub fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
-        let index = at.index() as usize;
+        always!(piece != PieceNone);
 
-        always!(index < 64);
+        let at_index = at.index() as usize;
+        always!(at_index < 64);
+
+        let piece_index = piece.index() as usize;
+        always!(piece_index < 16);
+
+        // TODO: move to ZorbistKey
+        // PERF: try get_unchecked ?
+        let hash_change = PIECE_SQUARE_TO_HASH[piece_index][at_index];
+        self.hash_key.mut_xor(hash_change);
+
+        // TODO: use always! bounds instead of unsafe ?
         unsafe {
-            *self.squares.get_unchecked_mut(index) = piece;
+            *self.squares.get_unchecked_mut(at_index) = piece;
         }
     }
 
+    // PERF: pass removed_piece (dignity) here to remove `self.piece` call
     #[inline(always)]
     pub fn remove_piece(&mut self, at: Square) {
-        always!(self.piece(at) != PieceNone);
-        self.set_piece_unchecked(at, PieceNone);
+        let removed_piece = self.piece(at);
+        always!(removed_piece != PieceNone);
+
+        let at_index = at.index() as usize;
+        always!(at_index < 64);
+
+        let piece_index = removed_piece.index() as usize;
+        always!(piece_index < 16);
+
+        // TODO: move to ZorbistKey
+        let hash_change = PIECE_SQUARE_TO_HASH[piece_index][at_index];
+        self.hash_key.mut_xor(hash_change);
+
+        unsafe {
+            *self.squares.get_unchecked_mut(at_index) = PieceNone;
+        }
     }
 
     #[inline(always)]
@@ -476,6 +509,43 @@ impl Board {
         }
 
         white_kings == 1 && black_kings == 1
+    }
+
+    // PERF: try to incremental update additional changes
+    // PERF: try to set ep_hash near hash_key incrementaly
+    // PERF: try to use ep_file.index() / color.index() to remove conditions
+    // TODO: check if we need to consider halfmove clock in hash
+    #[inline(always)]
+    pub const fn hash(&self) -> ZorbistKey {
+        // TODO: move to ZorbistKey
+        let stm_hash = if self.side_to_move() == Black {
+            PIECE_SQUARE_TO_HASH[0][0]
+        } else {
+            0
+        };
+
+        // TODO: move to ZorbistKey
+        let ep_hash = match self.en_passant_file() {
+            FileA => PIECE_SQUARE_TO_HASH[0][1],
+            FileB => PIECE_SQUARE_TO_HASH[0][2],
+            FileC => PIECE_SQUARE_TO_HASH[0][3],
+            FileD => PIECE_SQUARE_TO_HASH[0][4],
+            FileE => PIECE_SQUARE_TO_HASH[0][5],
+            FileF => PIECE_SQUARE_TO_HASH[0][6],
+            FileG => PIECE_SQUARE_TO_HASH[0][7],
+            FileH => PIECE_SQUARE_TO_HASH[0][8],
+            FileEnPassantNone => 0,
+            _ => never!(),
+        };
+
+        // TODO: move to ZorbistKey
+        let cs_index = self.castling_rights().index() as usize;
+        let cs_hash = PIECE_SQUARE_TO_HASH[7][cs_index];
+       
+        self.hash_key
+            .xor(stm_hash)
+            .xor(ep_hash)
+            .xor(cs_hash)
     }
 }
 
