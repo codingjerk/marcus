@@ -143,7 +143,6 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         let bucket = &self.buckets[small_key];
         if bucket.full_key != full_key {
             // TODO: log first-level collision
-            // println!("level-1 collision: {:?}", bucket.full_key);
             return None;
         }
 
@@ -165,8 +164,6 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
             let cut_buk_fen = bucket.fen.split(" ").take(4).collect::<Vec<_>>().join(" ");
 
             if cut_fen != cut_buk_fen {
-                println!("{}", cut_fen);
-                println!("{}", cut_buk_fen);
                 return None;
             }
         }

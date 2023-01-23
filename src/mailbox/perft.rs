@@ -15,11 +15,8 @@ fn perft_recursive<const TT_SIZE: usize>(
     }
 
     if let Some(nodes) = transposition_table.get(board, depth) {
-        // TODO: hash-match / missmatch
-        // println!("match");
+        // TODO: hash-match / missmatch statistics
         return nodes;
-    } else {
-        // println!("missmatch");
     };
 
     let start_move_index = move_buffer.len();

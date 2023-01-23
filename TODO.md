@@ -8,8 +8,6 @@
   - [ ] Mailbox
   - [ ] Rename stats feature
 
-- [ ] Clippy
-
 - [ ] Hash fuzzing
 
 - [ ] Advanced perft
@@ -17,6 +15,8 @@
 
 - [ ] Performance
   - [ ] Unwrap unsafe
+
+- [ ] Fix in-code TODOs
 
 ## Big parts
 

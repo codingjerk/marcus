@@ -183,7 +183,8 @@ impl Board {
             }
 
             let digit = fen_char!();
-            always!(b'0' <= digit && digit <= b'9');
+            // PERFT: check if this call is the same as manual range check
+            always!(digit.is_ascii_digit());
 
             result.halfmove_clock[0] *= 10;
             // NOTE: x & 0b1111 is equivalent to x - b'0' (if b'0' <= digit <= b'9')

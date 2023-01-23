@@ -9,7 +9,6 @@ edition = "2021"
 default = [
   "mailbox",
   "perft",
-  # "stats",
 ]
 mailbox = []
 perft = []

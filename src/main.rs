@@ -42,7 +42,7 @@ mod mailbox;
 fn perft() {
     let fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let nodes = mailbox::perft::perft(fen, 6);
-    println!("Perft is {}", nodes);
+    println!("Perft is {nodes}");
 }
 
 #[cfg(not(all(feature = "perft", feature = "mailbox")))]
