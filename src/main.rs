@@ -21,11 +21,14 @@
 #![feature(test)]
 extern crate test;
 
+mod board;
 mod buffer;
 mod castling;
 mod chess_move;
 mod color;
 mod hint;
+mod move_generator;
+mod perft;
 mod piece;
 mod prelude;
 mod rand;
@@ -34,19 +37,16 @@ mod square;
 mod transposition_table;
 mod util;
 
-#[cfg(feature = "mailbox")]
-mod mailbox;
-
-
-#[cfg(all(feature = "perft", feature = "mailbox"))]
+#[cfg(feature = "perft")]
 fn perft() {
     let fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let nodes = mailbox::perft::perft(fen, 6);
+    let nodes = perft::perft(fen, 6);
     println!("Perft is {nodes}");
 }
 
-#[cfg(not(all(feature = "perft", feature = "mailbox")))]
+#[cfg(not(feature = "perft"))]
 fn perft() {
+    // pass
 }
 
 fn main() {

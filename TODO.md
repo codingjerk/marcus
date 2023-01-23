@@ -5,7 +5,6 @@
 ## WIP
 
 - [ ] Remove useless features:
-  - [ ] Mailbox
   - [ ] Rename stats feature
 
 - [ ] Hash fuzzing
