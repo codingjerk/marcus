@@ -10,6 +10,8 @@ const MAX_FEN_SIZE: usize = 90;
 
 const UNDO_STACK_LENGTH: usize = MAX_SEARCH_DEPTH;
 
+pub type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
+
 #[derive(Clone, PartialEq)]
 pub struct Board {
     // PERF: try two arrays for dignities instead
@@ -581,8 +583,6 @@ impl fmt::Debug for Board {
 mod tests {
     use super::*;
 
-    type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
-
     #[test]
     fn from_fen_empty() {
         let board = Board::from_fen(b"8/8/8/8/8/8/8/8 w - - 0 1");
@@ -795,13 +795,18 @@ mod tests {
 
         assert!(got_white);
     }
+}
+
+#[cfg(test)]
+mod fuzz {
+    use super::*;
 
     // NOTE: This is fuzz test.
     //       it's kinda slow (depends on FUZZ_MULTIPLIER)
     //       and it's running with high iteration count
     //       on CI
     #[test]
-    fn fuzz_fen() {
+    fn fen() {
         let mut rng = FastRng::from_system_time();
         let mut buffer = FenBuffer::new();
         let mut next_buffer = FenBuffer::new();
@@ -827,8 +832,6 @@ mod bench {
     use super::*;
 
     use test::{Bencher, black_box};
-
-    type FenBuffer = StaticBuffer::<u8, MAX_FEN_SIZE>;
 
     #[bench]
     fn from_fen_startpos(b: &mut Bencher) {

@@ -1005,27 +1005,6 @@ mod tests {
     }
 
     #[test]
-    fn fuzz_generation() {
-        let mut rng = FastRng::from_system_time();
-        let movegen = MoveGenerator::new();
-        let mut buffer = MoveBuffer::new();
-
-        for i in 0..(11_010 * FUZZ_MULTIPLIER) {
-            let board = Board::rand(&mut rng);
-            buffer.reset();
-
-            if !board.has_possible_pawn_structure() ||
-               !board.has_possible_en_passant_square() ||
-               !board.has_possible_kings_setup()
-            {
-                continue;
-            }
-
-            movegen.generate(&board, &mut buffer);
-        }
-    }
-
-    #[test]
     fn make_move_quiet() {
         let mut board = Board::from_fen(b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         let movegen = MoveGenerator::new();
@@ -1412,9 +1391,35 @@ mod tests {
         // Hash should be same as original
         assert_eq!(original_hash, board.hash());
     }
+}
+
+#[cfg(test)]
+mod fuzz {
+    use super::*;
 
     #[test]
-    fn fuzz_make_unmake() {
+    fn generate() {
+        let mut rng = FastRng::from_system_time();
+        let movegen = MoveGenerator::new();
+        let mut buffer = MoveBuffer::new();
+
+        for i in 0..(11_010 * FUZZ_MULTIPLIER) {
+            let board = Board::rand(&mut rng);
+            buffer.reset();
+
+            if !board.has_possible_pawn_structure() ||
+               !board.has_possible_en_passant_square() ||
+               !board.has_possible_kings_setup()
+            {
+                continue;
+            }
+
+            movegen.generate(&board, &mut buffer);
+        }
+    }
+
+    #[test]
+    fn make_unmake() {
         let mut rng = FastRng::from_system_time();
         // STYLE: rename to move_gen or move_generator
         let movegen = MoveGenerator::new();
