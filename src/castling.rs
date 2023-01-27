@@ -97,7 +97,7 @@ impl CastlingRights {
     }
 
     #[inline(always)]
-    pub fn fen(self, buffer: &mut StaticBuffer<u8, 90>) {
+    pub fn fen(self, buffer: &mut FenBuffer) {
         if self == CastlingRightsNone {
             buffer.add(b'-');
             return;

@@ -242,7 +242,7 @@ impl Board {
     }
 
     #[inline(always)]
-    pub fn fen(&self, buffer: &mut StaticBuffer<u8, MAX_FEN_SIZE>) {
+    pub fn fen(&self, buffer: &mut FenBuffer) {
         // 1. Position
         for rank in Rank::top_to_bottom() {
             let mut empty_count: u8 = 0;
