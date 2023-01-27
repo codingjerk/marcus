@@ -4,15 +4,8 @@
 
 ## WIP
 
-- [ ] Hash fuzzing
-
 - [ ] Advanced perft
   - [ ] Parallel perft
-
-- [ ] Performance
-  - [ ] Unchecked math
-  - [ ] Indexes access (unchecked)
-  - [ ] Better inlines
 
 - [ ] Fix in-code TODOs
 - [ ] Safer unsafe (more debug checks, way to run with safe code)

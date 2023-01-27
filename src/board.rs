@@ -26,6 +26,9 @@ pub struct Board {
     // PERF: try different stack models:
     //       - keep actual values on stack, copy to stack in make, pop stack in unmake
     //       - keep actual values in board, change in-place in make, restore from stack in unmake
+    // PERF: try to keep undo tables on heap instead
+    // PERF: check how values are used in combination with other tables
+    //       and try to keep them near (move_buffers, transposition_tables, etc)
     ply: Ply,
     castling_rights: [CastlingRights; UNDO_STACK_LENGTH],
     en_passant_file: [File; UNDO_STACK_LENGTH],
@@ -214,11 +217,7 @@ impl Board {
 
     #[inline(always)]
     pub const fn piece(&self, at: Square) -> Piece {
-        let index = at.index() as usize;
-        always!(index < 64);
-
-        // PERF: check if always is enought
-        self.squares[index]
+        get_unchecked!(self.squares, at.index())
     }
 
     #[inline(always)]
@@ -228,17 +227,17 @@ impl Board {
 
     #[inline(always)]
     pub const fn castling_rights(&self) -> CastlingRights {
-        self.castling_rights[self.ply]
+        get_unchecked!(self.castling_rights, self.ply)
     }
 
     #[inline(always)]
     pub const fn en_passant_file(&self) -> File {
-        self.en_passant_file[self.ply]
+        get_unchecked!(self.en_passant_file, self.ply)
     }
 
     #[inline(always)]
     pub const fn halfmove_clock(&self) -> HalfmoveClock {
-        self.halfmove_clock[self.ply]
+        get_unchecked!(self.halfmove_clock, self.ply)
     }
 
     #[inline(always)]
@@ -426,11 +425,15 @@ impl Board {
 
     #[inline(always)]
     pub fn disallow_castling(&mut self, rights: CastlingRights) {
+        always!(self.ply < UNDO_STACK_LENGTH);
+
         self.castling_rights[self.ply].disallow(rights);
     }
 
     #[inline(always)]
     pub fn set_en_passant_file(&mut self, file: File) {
+        always!(self.ply < UNDO_STACK_LENGTH);
+
         self.en_passant_file[self.ply] = file;
     }
 
@@ -441,11 +444,15 @@ impl Board {
 
     #[inline(always)]
     pub fn reset_halfmove_clock(&mut self) {
+        always!(self.ply < UNDO_STACK_LENGTH);
+
         self.halfmove_clock[self.ply] = 0;
     }
 
     #[inline(always)]
     pub fn increase_halfmove_clock(&mut self) {
+        always!(self.ply < UNDO_STACK_LENGTH);
+
         // PERF: try to increase it in push_undo and just be no-op here
         self.halfmove_clock[self.ply] += 1;
     }
@@ -536,8 +543,8 @@ impl Board {
         };
 
         // TODO: move to ZorbistKey
-        let cs_index = self.castling_rights().index() as usize;
-        let cs_hash = PIECE_SQUARE_TO_HASH[7][cs_index];
+        let cs_index = self.castling_rights().index();
+        let cs_hash = get_unchecked_2d!(PIECE_SQUARE_TO_HASH, 7, cs_index);
        
         self.hash_key
             .xor(stm_hash)
@@ -553,7 +560,7 @@ impl fmt::Debug for Board {
 
             for file in File::a_to_h() {
                 let square = Square::from_file_rank(file, rank);
-                let piece = self.squares[square.index() as usize];
+                let piece = get_unchecked!(self.squares, square.index());
 
                 if piece == PieceNone {
                     write!(f, " . ")?;

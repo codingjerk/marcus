@@ -122,7 +122,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         let mut result: Box<Self> = unsafe { undefined_box() };
 
         for i in 0..SIZE {
-            result.buckets[i] = Bucket::empty();
+            set_unchecked!(result.buckets, i, Bucket::empty());
         }
 
         result
@@ -132,6 +132,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
     pub fn add(&mut self, board: &Board, depth: Depth, nodes: usize) {
         let full_key = board.hash();
         let small_key = full_key.index::<SIZE>();
+        always!(small_key < SIZE);
 
         // TODO: log overwrite collision
         #[cfg(feature = "transposition_table_checks")]
@@ -140,6 +141,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
             let mut fen_buffer = FenBuffer::new();
             board.fen(&mut fen_buffer);
             let fen = String::from(fen_buffer.as_str());
+
             self.buckets[small_key].fen = fen;
         }
         
@@ -153,6 +155,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
     pub fn get(&self, board: &Board, depth: Depth) -> Option<usize> {
         let full_key = board.hash();
         let small_key = full_key.index::<SIZE>();
+        always!(small_key < SIZE);
 
         let bucket = &self.buckets[small_key];
         if bucket.full_key != full_key {
@@ -181,13 +184,6 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         }
 
         Some(bucket.nodes)
-    }
-
-    #[inline(always)]
-    pub fn clean(&mut self) {
-        for i in 0..SIZE {
-            self.buckets[i] = Bucket::empty();
-        }
     }
 }
 

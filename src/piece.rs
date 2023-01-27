@@ -63,6 +63,7 @@ pub struct Piece(PieceInner);
 
 impl Piece {
     pub const Mask: PieceInner = 0b1111;
+    pub const TableSize: usize = 16;
 
     #[inline(always)]
     pub const fn new(color: Color, dignity: Dignity) -> Self {
@@ -134,13 +135,13 @@ impl Piece {
             xs
         };
 
-        let hash = (fen & 0b111111) as usize;
+        let hash = fen & 0b111111;
         get_unchecked!(FEN_TO_PIECE, hash)
     }
 
     #[inline(always)]
     pub const fn fen(self) -> u8 {
-        const PIECE_TO_FEN: [u8; PieceMax.index() as usize + 1] = {
+        const PIECE_TO_FEN: [u8; Piece::TableSize] = {
             let mut xs = [0; _];
 
             xs[BlackPawn.index() as usize] = b'p';
@@ -160,10 +161,7 @@ impl Piece {
             xs
         };
 
-        let index = self.index();
-        always!(index <= PieceMax.index());
-
-        get_unchecked!(PIECE_TO_FEN, index)
+        get_unchecked!(PIECE_TO_FEN, self.index())
     }
 
     #[cfg(test)]
@@ -215,5 +213,3 @@ pub const WhiteBishop: Piece = Piece::new(White, Bishop);
 pub const WhiteRook: Piece = Piece::new(White, Rook);
 pub const WhiteQueen: Piece = Piece::new(White, Queen);
 pub const WhiteKing: Piece = Piece::new(White, King);
-
-pub const PieceMax: Piece = WhiteKing;

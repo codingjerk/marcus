@@ -39,8 +39,7 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
 
     #[inline(always)]
     pub const fn as_slice(&self) -> &[E] {
-        // TODO: check if always eliminates bound checks
-        always!(self.cursor <= SIZE);
+        always!(self.cursor <= self.data.len());
         &self.data[..self.cursor]
     }
 
@@ -102,5 +101,23 @@ mod tests {
 
         buffer.reset();
         assert_eq!(buffer.len(), 0);
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    use super::*;
+
+    use test::{Bencher, black_box};
+
+    #[bench]
+    fn as_slice(b: &mut Bencher) {
+        let buffer = black_box(
+            StaticBuffer::<u8, 500>::new()
+        );
+
+        b.iter(|| {
+            black_box(black_box(&buffer).as_slice())
+        })
     }
 }

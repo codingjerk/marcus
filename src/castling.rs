@@ -62,6 +62,7 @@ impl CastlingRights {
         self.0 = 0;
     }
 
+    // TODO: rename to something like `allow_from_fen`, name other methods accordingly
     #[inline(always)]
     pub fn set_from_fen(&mut self, fen: u8) {
         const FEN_TO_CASTLING: [CastlingRights; b'q' as usize + 1] = {

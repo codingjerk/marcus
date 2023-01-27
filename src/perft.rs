@@ -45,7 +45,7 @@ pub fn perft(fen: &[u8], depth: Depth) -> usize {
     let mut board = Board::from_fen(fen);
     let movegen = MoveGenerator::new();
     let mut move_buffer = MoveBuffer::new();
-    let mut transposition_table = TranspositionTable::<{4 * 1024 * 1024}>::new_box();
+    let mut transposition_table = TranspositionTable::<{512 * 1024}>::new_box();
 
     perft_recursive(
         &mut board,
