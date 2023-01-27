@@ -41,19 +41,17 @@ fn perft_recursive<const TT_SIZE: usize>(
     result
 }
 
-static mut transposition_table_: TranspositionTable<{2 * 1024 * 1024}> = TranspositionTable::new();
-
 pub fn perft(fen: &[u8], depth: Depth) -> usize {
     let mut board = Board::from_fen(fen);
     let movegen = MoveGenerator::new();
     let mut move_buffer = MoveBuffer::new();
-    unsafe { transposition_table_.clean() }
+    let mut transposition_table = TranspositionTable::<{4 * 1024 * 1024}>::new_box();
 
     perft_recursive(
         &mut board,
         &movegen,
         &mut move_buffer,
-        unsafe { &mut transposition_table_ },
+        &mut transposition_table,
         depth,
     )
 }

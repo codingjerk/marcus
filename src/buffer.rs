@@ -9,14 +9,12 @@ pub struct StaticBuffer<E, const SIZE: usize> {
 
 impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
     #[inline(always)]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             // SAFETY
             // We return slice to only initialized values,
             // see `add` and `as_slice()` method
-            data: unsafe {
-                MaybeUninit::uninit().assume_init()
-            },
+            data: unsafe { undefined() },
             cursor: 0,
         }
     }
@@ -30,21 +28,19 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
     pub const fn get(&self, index: usize) -> E
         where E: Copy
     {
-        always!(index < self.cursor);
-
-        self.data[index]
+        get_unchecked!(self.data, index)
     }
 
     #[inline(always)]
     pub fn add(&mut self, value: E) {
-        always!(self.cursor < SIZE);
-
-        self.data[self.cursor] = value;
+        set_unchecked!(self.data, self.cursor, value);
         self.cursor += 1;
     }
 
     #[inline(always)]
     pub const fn as_slice(&self) -> &[E] {
+        // TODO: check if always eliminates bound checks
+        always!(self.cursor <= SIZE);
         &self.data[..self.cursor]
     }
 

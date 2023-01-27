@@ -693,7 +693,12 @@ impl MoveGenerator {
             return;
         }
 
-        let next_to_rook = unsafe { rook_from.by(1, 0).unwrap_unchecked() };
+        let next_to_rook = unsafe {
+            let res = rook_from.by(1, 0);
+            always!(res.is_some());
+            res.unwrap_unchecked()
+        };
+
         if board.piece(next_to_rook) != PieceNone {
             return;
         }

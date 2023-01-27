@@ -210,10 +210,9 @@ impl fmt::Debug for Move {
         let (ff, fr) = self.from().fen();
         let (tf, tr) = self.to().fen();
         let bytes = [ff, fr, tf, tr];
+        let bytes = unsafe { std::str::from_utf8_unchecked(&bytes) };
 
-        write!(f, "{}", unsafe {
-            std::str::from_utf8_unchecked(&bytes)
-        })?;
+        write!(f, "{}", bytes)?;
 
         let promoted = self.promoted();
         if promoted != DignityNone {

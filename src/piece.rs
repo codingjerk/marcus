@@ -135,10 +135,7 @@ impl Piece {
         };
 
         let hash = (fen & 0b111111) as usize;
-        always!(hash <= 0b110010);
-        unsafe {
-            *FEN_TO_PIECE.get_unchecked(hash)
-        }
+        get_unchecked!(FEN_TO_PIECE, hash)
     }
 
     #[inline(always)]
@@ -165,9 +162,8 @@ impl Piece {
 
         let index = self.index();
         always!(index <= PieceMax.index());
-        unsafe {
-            *PIECE_TO_FEN.get_unchecked(index as usize)
-        }
+
+        get_unchecked!(PIECE_TO_FEN, index)
     }
 
     #[cfg(test)]

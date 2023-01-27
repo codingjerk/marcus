@@ -105,11 +105,27 @@ pub struct TranspositionTable<const SIZE: usize> {
 impl<const SIZE: usize> TranspositionTable<SIZE> {
     #[inline(always)]
     pub const fn new() -> Self {
+        always!(SIZE <= 1024);
+        always!(SIZE & (SIZE - 1) == 0);
+
         const EMPTY: Bucket = Bucket::empty();
 
         Self {
             buckets: [EMPTY; SIZE],
         }
+    }
+
+    #[inline(always)]
+    pub fn new_box() -> Box<Self> {
+        always!(SIZE & (SIZE - 1) == 0);
+
+        let mut result: Box<Self> = unsafe { undefined_box() };
+
+        for i in 0..SIZE {
+            result.buckets[i] = Bucket::empty();
+        }
+
+        result
     }
 
     #[inline(always)]

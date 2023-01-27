@@ -75,7 +75,7 @@ impl CastlingRights {
             xs
         };
 
-        let castling = unsafe { *FEN_TO_CASTLING.get_unchecked(fen as usize) };
+        let castling = get_unchecked!(FEN_TO_CASTLING, fen);
         always!(castling != CastlingRightsNone);
 
         self.allow(castling);

@@ -16,6 +16,7 @@
 #![feature(const_slice_index)]
 #![feature(derive_const)]
 #![feature(generic_arg_infer)]
+#![feature(new_uninit)]
 #![feature(unchecked_math)]
 
 #![feature(test)]

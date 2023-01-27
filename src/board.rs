@@ -80,10 +80,7 @@ impl Board {
 
         macro_rules! fen_char {
             () => {
-                unsafe {
-                    always!((fen_index as usize) < fen.len());
-                    *fen.get_unchecked(fen_index as usize)
-                }
+                get_unchecked!(fen, fen_index)
             }
         }
 
@@ -369,42 +366,39 @@ impl Board {
     pub fn set_piece_unchecked(&mut self, at: Square, piece: Piece) {
         always!(piece != PieceNone);
 
-        let at_index = at.index() as usize;
-        always!(at_index < 64);
-
-        let piece_index = piece.index() as usize;
-        always!(piece_index < 16);
+        let at_index = at.index();
+        let piece_index = piece.index();
 
         // TODO: move to ZorbistKey
-        // PERF: try get_unchecked ?
-        let hash_change = PIECE_SQUARE_TO_HASH[piece_index][at_index];
+        let hash_change = get_unchecked_2d!(
+            PIECE_SQUARE_TO_HASH,
+            piece_index,
+            at_index
+        );
         self.hash_key.mut_xor(hash_change);
 
-        // TODO: use always! bounds instead of unsafe ?
-        unsafe {
-            *self.squares.get_unchecked_mut(at_index) = piece;
-        }
+        set_unchecked!(self.squares, at_index, piece);
     }
 
     // PERF: pass removed_piece (dignity) here to remove `self.piece` call
     #[inline(always)]
     pub fn remove_piece(&mut self, at: Square) {
+        // TODO: check if such calls are removed in debug builds
         let removed_piece = self.piece(at);
         always!(removed_piece != PieceNone);
 
-        let at_index = at.index() as usize;
-        always!(at_index < 64);
-
-        let piece_index = removed_piece.index() as usize;
-        always!(piece_index < 16);
+        let at_index = at.index();
+        let piece_index = removed_piece.index();
 
         // TODO: move to ZorbistKey
-        let hash_change = PIECE_SQUARE_TO_HASH[piece_index][at_index];
+        let hash_change = get_unchecked_2d!(
+            PIECE_SQUARE_TO_HASH,
+            piece_index,
+            at_index
+        );
         self.hash_key.mut_xor(hash_change);
 
-        unsafe {
-            *self.squares.get_unchecked_mut(at_index) = PieceNone;
-        }
+        set_unchecked!(self.squares, at_index, PieceNone);
     }
 
     #[inline(always)]

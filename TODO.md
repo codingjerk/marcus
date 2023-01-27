@@ -10,9 +10,13 @@
   - [ ] Parallel perft
 
 - [ ] Performance
-  - [ ] Unwrap unsafe
+  - [ ] Unwrap unsafes
+  - [ ] Unchecked math
+  - [ ] Indexes access (unchecked)
+  - [ ] Better inlines
 
 - [ ] Fix in-code TODOs
+- [ ] Safer unsafe (more debug checks, way to run with safe code)
 
 ## Big parts
 
