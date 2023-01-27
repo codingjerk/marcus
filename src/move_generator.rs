@@ -66,7 +66,7 @@ impl MoveGenerator {
            && piece.dignity() == Pawn
            && Some(chess_move.to()) == ep_to
         {
-            board.remove_piece(ep_to.unwrap().forward(opp_color, 1));
+            board.remove_piece(unwrap_unchecked!(ep_to).forward(opp_color, 1));
         } else if chess_move.captured() != DignityNone {
             always!(
                 board.piece(chess_move.to()).dignity() ==
@@ -198,8 +198,7 @@ impl MoveGenerator {
         let moved_side = stm.swapped();
 
         let king_pos = board.find_king(moved_side);
-        always!(king_pos.is_some());
-        let king_pos = king_pos.unwrap();
+        let king_pos = unwrap_unchecked!(king_pos);
 
         if self.can_be_attacked(king_pos, board, stm) {
             return false;
@@ -209,24 +208,24 @@ impl MoveGenerator {
         always!(moved_piece.color() == moved_side);
 
         if chess_move.is_king_side_castling(moved_piece.dignity()) {
-            let leave_square = king_pos.by(-2, 0).unwrap();
+            let leave_square = unwrap_unchecked!(king_pos.by(-2, 0));
             if self.can_be_attacked(leave_square, board, stm) {
                 return false;
             }
 
-            let cross_square = king_pos.by(-1, 0).unwrap();
+            let cross_square = unwrap_unchecked!(king_pos.by(-1, 0));
             if self.can_be_attacked(cross_square, board, stm) {
                 return false;
             }
         }
 
         if chess_move.is_queen_side_castling(moved_piece.dignity()) {
-            let leave_square = king_pos.by(2, 0).unwrap();
+            let leave_square = unwrap_unchecked!(king_pos.by(2, 0));
             if self.can_be_attacked(leave_square, board, stm) {
                 return false;
             }
 
-            let cross_square = king_pos.by(1, 0).unwrap();
+            let cross_square = unwrap_unchecked!(king_pos.by(1, 0));
             if self.can_be_attacked(cross_square, board, stm) {
                 return false;
             }
@@ -693,11 +692,7 @@ impl MoveGenerator {
             return;
         }
 
-        let next_to_rook = unsafe {
-            let res = rook_from.by(1, 0);
-            always!(res.is_some());
-            res.unwrap_unchecked()
-        };
+        let next_to_rook = unwrap_unchecked!(rook_from.by(1, 0));
 
         if board.piece(next_to_rook) != PieceNone {
             return;

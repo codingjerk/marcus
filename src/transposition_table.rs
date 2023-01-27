@@ -137,11 +137,9 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         #[cfg(feature = "transposition_table_checks")]
         {
             // TODO: FenBuffer
-            let mut fen_buffer = StaticBuffer::<u8, 90>::new();
+            let mut fen_buffer = FenBuffer::new();
             board.fen(&mut fen_buffer);
-            let fen = String::from(
-                std::str::from_utf8(fen_buffer.as_slice()).unwrap()
-            );
+            let fen = String::from(fen_buffer.as_str());
             self.buckets[small_key].fen = fen;
         }
         
@@ -170,11 +168,9 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         // TODO: check for fen, log second-level collision
         #[cfg(feature = "transposition_table_checks")]
         {
-            let mut fen_buffer = StaticBuffer::<u8, 90>::new();
+            let mut fen_buffer = FenBuffer::new();
             board.fen(&mut fen_buffer);
-            let fen = String::from(
-                std::str::from_utf8(fen_buffer.as_slice()).unwrap()
-            );
+            let fen = String::from(fen_buffer.as_str());
 
             let cut_fen = fen.split(" ").take(4).collect::<Vec<_>>().join(" ");
             let cut_buk_fen = bucket.fen.split(" ").take(4).collect::<Vec<_>>().join(" ");

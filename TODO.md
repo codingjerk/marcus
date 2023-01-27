@@ -10,7 +10,6 @@
   - [ ] Parallel perft
 
 - [ ] Performance
-  - [ ] Unwrap unsafes
   - [ ] Unchecked math
   - [ ] Indexes access (unchecked)
   - [ ] Better inlines

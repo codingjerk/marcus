@@ -44,3 +44,14 @@ macro_rules! set_unchecked {
 }
 
 pub(crate) use set_unchecked;
+
+macro_rules! unwrap_unchecked {
+    ($value:expr) => {
+        unsafe {
+            always!($value.is_some());
+            $value.unwrap_unchecked()
+        }
+    }
+}
+
+pub(crate) use unwrap_unchecked;

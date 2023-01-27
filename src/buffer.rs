@@ -68,6 +68,15 @@ impl<E, const SIZE: usize> StaticBuffer<E, SIZE> {
     }
 }
 
+impl<const SIZE: usize> StaticBuffer<u8, SIZE> {
+    #[inline(always)]
+    pub const fn as_str(&self) -> &str {
+        unsafe {
+            std::str::from_utf8_unchecked(self.as_slice())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
