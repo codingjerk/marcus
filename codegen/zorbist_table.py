@@ -1,28 +1,41 @@
 import random
 
 
-print("pub static PIECE_SQUARE_TO_HASH: [[u64; 64]; 16] = [")
+def gen_rand():
+    while True:
+        result = random.randint(0, 2**64 - 1)
+
+        # Too few bits, not good for resulting key
+        if result.bit_count() <= 2:
+            continue
+
+        break
+
+    return result
+
+
+print("pub const PIECE_SQUARE_TO_HASH: [[u64; 64]; 16] = [")
 
 for comment in [
-    "PieceNone - not used",
+    "[RESERVED FOR STM AND EN_PASSANT FILE]",
     "BlackPawn",
     "BlackKnight",
     "BlackBishop",
     "BlackRook",
     "BlackQueen",
     "BlackKing",
-    "Reserved (Black nothing) - not used",
-    "Reserved (White PieceNone) - not used",
+    "[RESERVED FOR CASTLING RIGHTS]",
+    "[RESERVED, NOT USED]",
     "WhitePawn",
     "WhiteKnight",
     "WhiteBishop",
     "WhiteRook",
     "WhiteQueen",
     "WhiteKing",
-    "Reserved (White nothing) - not used",
+    "[RESERVED, NOT USED]",
 ]:
     values = [
-        hex(random.randint(0, 2**64))
+        hex(gen_rand())
         for _ in range(64)
     ]
     row = ", ".join(values)
