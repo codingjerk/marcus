@@ -123,7 +123,7 @@ jobs:
 
   release:
     name: Release
-    needs: [ test, coverage, build ]
+    needs: [ lint, test, coverage, build ]
     runs-on: ubuntu-latest
     steps:
       - name: Full checkout

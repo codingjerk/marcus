@@ -214,6 +214,7 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
                 //       unitialized value of bucket with empty one and
                 //       do not call `drop` on unitialized memory
                 //       in case `Bucket` needs it
+                #[allow(clippy::forget_non_drop)]
                 std::mem::forget(std::mem::replace(&mut result.buckets[i], Bucket::empty()));
             }
         }

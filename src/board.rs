@@ -559,7 +559,7 @@ impl Board {
         self.fen(&mut buffer);
 
         let full_fen = String::from(buffer.as_str());
-        let cut_fen = full_fen.split(" ").take(4).collect::<Vec<_>>().join(" ");
+        let cut_fen = full_fen.split(' ').take(4).collect::<Vec<_>>().join(" ");
 
         cut_fen
     }

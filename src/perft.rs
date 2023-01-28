@@ -62,6 +62,7 @@ pub fn perft(fen: &[u8], depth: Depth) -> usize {
         transposition_table.print_statistics();
     }
 
+    #[allow(clippy::let_and_return)]
     result
 }
 
@@ -94,6 +95,7 @@ pub fn perft_threaded(fen: &[u8], depth: Depth) -> usize {
                 #[cfg(feature = "transposition_table_stats")]
                 child_transposition_table.print_statistics();
 
+                #[allow(clippy::let_and_return)]
                 result
             }));
         }

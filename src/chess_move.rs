@@ -212,7 +212,7 @@ impl fmt::Debug for Move {
         let bytes = [ff, fr, tf, tr];
         let bytes = unsafe { std::str::from_utf8_unchecked(&bytes) };
 
-        write!(f, "{}", bytes)?;
+        write!(f, "{bytes}")?;
 
         let promoted = self.promoted();
         if promoted != DignityNone {
