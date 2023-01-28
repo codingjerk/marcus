@@ -5,10 +5,9 @@
 ## WIP
 
 - [ ] Advanced perft
-  - [ ] Parallel perft
+  - [ ] Perft statistics (+ transposition_table statistics)
 
 - [ ] Fix in-code TODOs
-- [ ] Safer unsafe (more debug checks, way to run with safe code)
 
 ## Big parts
 

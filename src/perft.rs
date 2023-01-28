@@ -19,11 +19,13 @@ fn perft_recursive<const TT_SIZE: usize>(
         return nodes;
     };
 
+    // TODO: find a better way to track depth
     let start_move_index = move_buffer.len();
     movegen.generate(board, move_buffer);
     let end_move_index = move_buffer.len();
 
     let mut result = 0;
+    // TODO: use iterators
     for move_index in start_move_index..end_move_index {
         let chess_move = move_buffer.get(move_index);
         let legal = movegen.make_move(board, chess_move);
@@ -54,6 +56,45 @@ pub fn perft(fen: &[u8], depth: Depth) -> usize {
         &mut transposition_table,
         depth,
     )
+}
+
+pub fn perft_threaded(fen: &[u8], depth: Depth) -> usize {
+    let mut board = Board::from_fen(fen);
+    let movegen = MoveGenerator::new();
+    let mut move_buffer = MoveBuffer::new();
+    let mut threads = Vec::with_capacity(16);
+
+    movegen.generate(&board, &mut move_buffer);
+
+    for move_index in 0..move_buffer.len() {
+        let chess_move = move_buffer.get(move_index);
+        let legal = movegen.make_move(&mut board, chess_move);
+        if legal {
+            let mut child_board = board.clone();
+            threads.push(std::thread::spawn(move || {
+                let child_movegen = MoveGenerator::new();
+                let mut child_move_buffer = MoveBuffer::new();
+                let mut child_transposition_table = TranspositionTable::<{512 * 1024}>::new_box();
+
+                perft_recursive(
+                    &mut child_board,
+                    &child_movegen,
+                    &mut child_move_buffer,
+                    &mut child_transposition_table,
+                    depth - 1,
+                )
+            }));
+        }
+
+        movegen.unmake_move(&mut board, chess_move);
+    }
+
+    let mut result = 0;
+    for thread in threads {
+        result += thread.join().unwrap();
+    }
+
+    result
 }
 
 #[cfg(test)]
