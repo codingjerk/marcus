@@ -49,13 +49,20 @@ pub fn perft(fen: &[u8], depth: Depth) -> usize {
     let mut move_buffer = MoveBuffer::new();
     let mut transposition_table = TranspositionTable::<{512 * 1024}>::new_box();
 
-    perft_recursive(
+    let result = perft_recursive(
         &mut board,
         &movegen,
         &mut move_buffer,
         &mut transposition_table,
         depth,
-    )
+    );
+
+    #[cfg(feature = "transposition_table_stats")]
+    {
+        transposition_table.print_statistics();
+    }
+
+    result
 }
 
 pub fn perft_threaded(fen: &[u8], depth: Depth) -> usize {
@@ -76,13 +83,18 @@ pub fn perft_threaded(fen: &[u8], depth: Depth) -> usize {
                 let mut child_move_buffer = MoveBuffer::new();
                 let mut child_transposition_table = TranspositionTable::<{512 * 1024}>::new_box();
 
-                perft_recursive(
+                let result = perft_recursive(
                     &mut child_board,
                     &child_movegen,
                     &mut child_move_buffer,
                     &mut child_transposition_table,
                     depth - 1,
-                )
+                );
+
+                #[cfg(feature = "transposition_table_stats")]
+                child_transposition_table.print_statistics();
+
+                result
             }));
         }
 

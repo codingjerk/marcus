@@ -34,8 +34,8 @@ pub struct Board {
     en_passant_file: [File; UNDO_STACK_LENGTH],
     halfmove_clock: [HalfmoveClock; UNDO_STACK_LENGTH],
 
-    // Zorbist hashing
-    hash_key: ZorbistKey,
+    // Zobrist hashing
+    hash_key: ZobristKey,
 }
 
 impl Board {
@@ -54,7 +54,7 @@ impl Board {
 
             // Hashing
             // PERF: try to keep hash_key in undo table
-            hash_key: ZorbistKey::new(),
+            hash_key: ZobristKey::new(),
         }
     }
 
@@ -76,7 +76,7 @@ impl Board {
             en_passant_file: [FileEnPassantNone; UNDO_STACK_LENGTH],
             halfmove_clock: [0; UNDO_STACK_LENGTH],
 
-            hash_key: ZorbistKey::new(),
+            hash_key: ZobristKey::new(),
         };
 
         let mut fen_index: u8 = 0;
@@ -368,7 +368,7 @@ impl Board {
         let at_index = at.index();
         let piece_index = piece.index();
 
-        // TODO: move to ZorbistKey
+        // TODO: move to ZobristKey
         let hash_change = get_unchecked_2d!(
             PIECE_SQUARE_TO_HASH,
             piece_index,
@@ -389,7 +389,7 @@ impl Board {
         let at_index = at.index();
         let piece_index = removed_piece.index();
 
-        // TODO: move to ZorbistKey
+        // TODO: move to ZobristKey
         let hash_change = get_unchecked_2d!(
             PIECE_SQUARE_TO_HASH,
             piece_index,
@@ -520,15 +520,15 @@ impl Board {
     // PERF: try to use ep_file.index() / color.index() to remove conditions
     // TODO: check if we need to consider halfmove clock in hash
     #[inline(always)]
-    pub const fn hash(&self) -> ZorbistKey {
-        // TODO: move to ZorbistKey
+    pub const fn hash(&self) -> ZobristKey {
+        // TODO: move to ZobristKey
         let stm_hash = if self.side_to_move() == Black {
             PIECE_SQUARE_TO_HASH[0][0]
         } else {
             0
         };
 
-        // TODO: move to ZorbistKey
+        // TODO: move to ZobristKey
         let ep_hash = match self.en_passant_file() {
             FileA => PIECE_SQUARE_TO_HASH[0][1],
             FileB => PIECE_SQUARE_TO_HASH[0][2],
@@ -542,7 +542,7 @@ impl Board {
             _ => never!(),
         };
 
-        // TODO: move to ZorbistKey
+        // TODO: move to ZobristKey
         let cs_index = self.castling_rights().index();
         let cs_hash = get_unchecked_2d!(PIECE_SQUARE_TO_HASH, 7, cs_index);
        
@@ -550,6 +550,18 @@ impl Board {
             .xor(stm_hash)
             .xor(ep_hash)
             .xor(cs_hash)
+    }
+
+    // NOTE: slow function for debugging purposes only
+    //       do not use in release build
+    pub fn debug_fen(&self) -> String {
+        let mut buffer = FenBuffer::new();
+        self.fen(&mut buffer);
+
+        let full_fen = String::from(buffer.as_str());
+        let cut_fen = full_fen.split(" ").take(4).collect::<Vec<_>>().join(" ");
+
+        cut_fen
     }
 }
 

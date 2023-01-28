@@ -11,6 +11,7 @@ default = [
 ]
 perft = []
 transposition_table_checks = []
+transposition_table_stats = []
 
 [profile.release]
 lto = "fat"

@@ -41,7 +41,7 @@ mod util;
 #[cfg(feature = "perft")]
 fn perft() {
     let fen = b"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let nodes = perft::perft_threaded(fen, 7);
+    let nodes = perft::perft_threaded(fen, 8);
     println!("Perft is {nodes}");
 }
 

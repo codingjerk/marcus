@@ -1,11 +1,13 @@
+use std::fmt;
+
 use crate::prelude::*;
 
 type Depth = usize; // TODO: move to types
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ZorbistKey(u64);
+pub struct ZobristKey(u64);
 
-impl ZorbistKey {
+impl ZobristKey {
     #[inline(always)]
     pub const fn new() -> Self {
         Self(0)
@@ -70,7 +72,7 @@ pub const PIECE_SQUARE_TO_HASH: [[u64; 64]; 16] = [
 
 #[derive(Clone)]
 struct Bucket {
-    full_key: ZorbistKey,
+    full_key: ZobristKey,
     depth: Depth,
 
     nodes: usize, // TODO: custom buckets
@@ -82,7 +84,7 @@ struct Bucket {
 impl Bucket {
     const fn empty() -> Self {
         Self {
-            full_key: ZorbistKey(0),
+            full_key: ZobristKey(0),
             depth: 0,
 
             nodes: 0,
@@ -93,25 +95,110 @@ impl Bucket {
     }
 }
 
+#[cfg(feature = "transposition_table_stats")]
+pub struct TranspositionTableStats {
+    writes: usize,
+    rewrites: usize,
+    
+    reads: usize,
+    hits: usize,
+    misses: usize,
+    empty_bucket_misses: usize,
+    bucket_condition_misses: usize,
+
+    partial_key_collisions: usize,
+    full_key_collisions: usize,
+}
+
+#[cfg(feature = "transposition_table_stats")]
+impl TranspositionTableStats {
+    const fn new() -> Self {
+        Self {
+            writes: 0,
+            rewrites: 0,
+
+            reads: 0,
+            hits: 0,
+            misses: 0,
+            empty_bucket_misses: 0,
+            bucket_condition_misses: 0,
+
+            partial_key_collisions: 0,
+            full_key_collisions: 0,
+        }
+    }
+}
+
+#[cfg(feature = "transposition_table_stats")]
+impl fmt::Debug for TranspositionTableStats {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "- Writes: {}", self.writes)?;
+        writeln!(f, "  - Rewrites: {} ({:.1}%)",
+            self.rewrites,
+            self.rewrites as f64 * 100.0 / self.writes as f64
+        )?;
+
+        writeln!(f)?;
+        writeln!(f, "- Reads: {}", self.reads)?;
+        writeln!(f, "  - Hits: {} ({:.1}%)",
+            self.hits,
+            self.hits as f64 * 100.0 / self.reads as f64,
+        )?;
+        writeln!(f, "  - Misses: {} ({:.1}%)",
+            self.misses,
+            self.misses as f64 * 100.0 / self.reads as f64,
+        )?;
+        writeln!(f, "    - Empty bucket: {} ({:.1}%)",
+            self.empty_bucket_misses,
+            self.empty_bucket_misses as f64 * 100.0 / self.reads as f64,
+        )?;
+        writeln!(f, "    - Bucket condition: {} ({:.1}%)",
+            self.bucket_condition_misses,
+            self.bucket_condition_misses as f64 * 100.0 / self.reads as f64,
+        )?;
+
+        writeln!(f, "  - Collisions (partial key): {} ({:.1}%)",
+            self.partial_key_collisions,
+            self.partial_key_collisions as f64 * 100.0 / self.reads as f64,
+        )?;
+
+        writeln!(f, "  - Collisions (full key): {} ({:.1}%)",
+            self.full_key_collisions,
+            self.full_key_collisions as f64 * 100.0 / self.reads as f64,
+        )?;
+
+        Ok(())
+    }
+}
+
 // NOTE: instead of using Optional<Bucket>
 //       we interpret buckets with full_key == 0
 //       as empty, saving 1 bit (and 64 bits aligned)
 pub struct TranspositionTable<const SIZE: usize> {
     buckets: [Bucket; SIZE],
 
-    // TODO: Collision stats
+    #[cfg(feature = "transposition_table_stats")]
+    stats: TranspositionTableStats,
 }
 
 impl<const SIZE: usize> TranspositionTable<SIZE> {
     #[inline(always)]
     pub const fn new() -> Self {
+        // NOTE: this method creates TranspositionTable on stack
+        //       so it's not suitable to be used with small tables
         always!(SIZE <= 1024);
+
+        // NOTE: for performance reasons, we check here for SIZE
+        //       to be power of two
         always!(SIZE & (SIZE - 1) == 0);
 
         const EMPTY: Bucket = Bucket::empty();
 
         Self {
             buckets: [EMPTY; SIZE],
+
+            #[cfg(feature = "transposition_table_stats")]
+            stats: TranspositionTableStats::new(),
         }
     }
 
@@ -122,7 +209,18 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         let mut result: Box<Self> = unsafe { undefined_box() };
 
         for i in 0..SIZE {
-            set_unchecked!(result.buckets, i, Bucket::empty());
+            unsafe {
+                // NOTE: it's necessary to do all of this magic to replace old
+                //       unitialized value of bucket with empty one and
+                //       do not call `drop` on unitialized memory
+                //       in case `Bucket` needs it
+                std::mem::forget(std::mem::replace(&mut result.buckets[i], Bucket::empty()));
+            }
+        }
+
+        #[cfg(feature = "transposition_table_stats")]
+        {
+            result.stats = TranspositionTableStats::new();
         }
 
         result
@@ -134,15 +232,18 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
         let small_key = full_key.index::<SIZE>();
         always!(small_key < SIZE);
 
-        // TODO: log overwrite collision
+        #[cfg(feature = "transposition_table_stats")]
+        {
+            self.stats.writes += 1;
+
+            if !self.buckets[small_key].full_key.empty() {
+                self.stats.rewrites += 1;
+            }
+        }
+
         #[cfg(feature = "transposition_table_checks")]
         {
-            // TODO: FenBuffer
-            let mut fen_buffer = FenBuffer::new();
-            board.fen(&mut fen_buffer);
-            let fen = String::from(fen_buffer.as_str());
-
-            self.buckets[small_key].fen = fen;
+            self.buckets[small_key].fen = board.debug_fen();
         }
         
         self.buckets[small_key].full_key = full_key;
@@ -152,38 +253,79 @@ impl<const SIZE: usize> TranspositionTable<SIZE> {
 
     // TODO: return bucket
     #[inline(always)]
-    pub fn get(&self, board: &Board, depth: Depth) -> Option<usize> {
+    pub fn get(&mut self, board: &Board, depth: Depth) -> Option<usize> {
         let full_key = board.hash();
         let small_key = full_key.index::<SIZE>();
         always!(small_key < SIZE);
 
+        #[cfg(feature = "transposition_table_stats")]
+        {
+            self.stats.reads += 1;
+        }
+
         let bucket = &self.buckets[small_key];
         if bucket.full_key != full_key {
-            // TODO: log first-level collision
+            // TODO: move to method
+            #[cfg(feature = "transposition_table_stats")]
+            {
+                if bucket.full_key.empty() {
+                    self.stats.empty_bucket_misses += 1;
+                } else {
+                    self.stats.partial_key_collisions += 1;
+                }
+                
+                self.stats.misses += 1;
+            }
+
             return None;
         }
 
         if bucket.depth != depth {
-            // TODO: log
+            #[cfg(feature = "transposition_table_stats")]
+            {
+                self.stats.bucket_condition_misses += 1;
+                self.stats.misses += 1;
+            }
+
             return None;
         }
 
-        // TODO: check for fen, log second-level collision
         #[cfg(feature = "transposition_table_checks")]
         {
-            let mut fen_buffer = FenBuffer::new();
-            board.fen(&mut fen_buffer);
-            let fen = String::from(fen_buffer.as_str());
+            let board_fen = board.debug_fen();
 
-            let cut_fen = fen.split(" ").take(4).collect::<Vec<_>>().join(" ");
-            let cut_buk_fen = bucket.fen.split(" ").take(4).collect::<Vec<_>>().join(" ");
+            if board_fen != bucket.fen {
+                #[cfg(feature = "transposition_table_stats")]
+                {
+                    self.stats.full_key_collisions += 1;
+                    self.stats.misses += 1;
+                }
 
-            if cut_fen != cut_buk_fen {
                 return None;
             }
         }
 
+        #[cfg(feature = "transposition_table_stats")]
+        {
+            self.stats.hits += 1;
+        }
+
         Some(bucket.nodes)
+    }
+
+    #[cfg(feature = "transposition_table_stats")]
+    pub fn print_statistics(&self) {
+        println!("{:?}", self.stats);
+
+        let size = SIZE;
+        let non_empty = self.buckets.iter().filter(|b| !b.full_key.empty()).count();
+
+        println!(
+            "Fullness: {} / {} ({:.1}%)",
+            non_empty,
+            size,
+            (non_empty as f64 * 100.0) / size as f64
+        );
     }
 }
 
